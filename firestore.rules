@@ -1,0 +1,76 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Deploy: firebase deploy --only firestore:rules --project memoro-f89bf
+
+    // Canonical patient profile: users/patients/users/{uid}
+    match /users/patients/users/{userId} {
+      // Patients own their doc; caregivers (careGiver/{uid}) may read for linking / care views.
+      allow read: if request.auth != null && (
+        request.auth.uid == userId ||
+        exists(/databases/$(database)/documents/careGiver/$(request.auth.uid))
+      );
+      allow write: if request.auth != null && request.auth.uid == userId;
+    }
+
+    // Doctor hub (future): users/doctors/users/{uid}
+    match /users/doctors/users/{userId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+
+    // Caregiver canonical collection.
+    match /careGiver/{userId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+
+    // Caregiver requests to link with a patient (pending / accepted / …).
+    match /doctorsRequests/{requestId} {
+      allow create: if request.auth != null
+        && exists(/databases/$(database)/documents/careGiver/$(request.auth.uid))
+        && request.resource.data.doctorId == request.auth.uid
+        && request.resource.data.patientUid is string
+        && request.resource.data.patientId is string
+        && request.resource.data.requestStatus is string;
+      allow read: if request.auth != null && (
+        resource.data.doctorId == request.auth.uid ||
+        resource.data.patientUid == request.auth.uid
+      );
+      // Patient may accept (or decline later) their side of the request.
+      allow update: if request.auth != null
+        && resource.data.patientUid == request.auth.uid
+        && request.resource.data.doctorId == resource.data.doctorId
+        && request.resource.data.patientUid == resource.data.patientUid
+        && request.resource.data.patientId == resource.data.patientId;
+      allow delete: if false;
+    }
+
+    // Legacy per-user patient profile: users/{uid}/patients/profile
+    match /users/{userId}/patients/{docId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+
+    // Legacy per-user doctor profile (unused by app today)
+    match /users/{userId}/doctors/{docId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+
+    // Optional: parent user doc (metadata only). Same uid check.
+    match /users/{userId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+
+    // Legacy top-level paths (migration / old clients)
+    match /patients/{userId} {
+      allow read: if request.auth != null && (
+        request.auth.uid == userId ||
+        exists(/databases/$(database)/documents/careGiver/$(request.auth.uid))
+      );
+      allow write: if request.auth != null && request.auth.uid == userId;
+    }
+
+    // Serial counter for public patient ids (p-1, p-2, …). Tighten for production.
+    match /counters/{docId} {
+      allow read, write: if request.auth != null;
+    }
+  }
+}

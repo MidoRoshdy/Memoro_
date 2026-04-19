@@ -1,0 +1,47 @@
+{
+  "flutter": {
+    "platforms": {
+      "android": {
+        "default": {
+          "projectId": "memoro-f89bf",
+          "appId": "1:299115058311:android:9ae05d26d5a0eacc021422",
+          "fileOutput": "android/app/google-services.json"
+        }
+      },
+      "ios": {
+        "default": {
+          "projectId": "memoro-f89bf",
+          "appId": "1:299115058311:ios:9135ebdeb8433b64021422",
+          "uploadDebugSymbols": false,
+          "fileOutput": "ios/Runner/GoogleService-Info.plist"
+        }
+      },
+      "macos": {
+        "default": {
+          "projectId": "memoro-f89bf",
+          "appId": "1:299115058311:ios:9135ebdeb8433b64021422",
+          "uploadDebugSymbols": false,
+          "fileOutput": "macos/Runner/GoogleService-Info.plist"
+        }
+      },
+      "dart": {
+        "lib/firebase_options.dart": {
+          "projectId": "memoro-f89bf",
+          "configurations": {
+            "android": "1:299115058311:android:9ae05d26d5a0eacc021422",
+            "ios": "1:299115058311:ios:9135ebdeb8433b64021422",
+            "macos": "1:299115058311:ios:9135ebdeb8433b64021422",
+            "web": "1:299115058311:web:136cdff6a92d005b021422",
+            "windows": "1:299115058311:web:c9137fbe1a33f4e2021422"
+          }
+        }
+      }
+    }
+  },
+  "firestore": {
+    "rules": "firestore.rules"
+  },
+  "storage": {
+    "rules": "storage.rules"
+  }
+}
