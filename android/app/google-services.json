@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "299115058311",
+    "project_id": "memoro-f89bf",
+    "storage_bucket": "memoro-f89bf.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:299115058311:android:9ae05d26d5a0eacc021422",
+        "android_client_info": {
+          "package_name": "com.example.memoro"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBtTvsndBsRfNHqyLxB6QU3BdVWzC67OvA"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

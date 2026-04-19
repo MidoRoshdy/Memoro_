@@ -1,0 +1,76 @@
+{
+  "faqs": [
+    {
+      "questionEn": "What is Alzheimer's disease?",
+      "questionAr": "ما هو مرض ألزهايمر؟",
+      "answerEn": "Alzheimer's is a brain disease that gradually affects memory, thinking, and daily activities.",
+      "answerAr": "ألزهايمر هو مرض يصيب الدماغ تدريجيا ويؤثر على الذاكرة والتفكير والأنشطة اليومية."
+    },
+    {
+      "questionEn": "What are the early symptoms?",
+      "questionAr": "ما هي الأعراض المبكرة؟",
+      "answerEn": "Early signs include frequent forgetfulness, repeating questions, losing items, and difficulty finding words.",
+      "answerAr": "من الأعراض المبكرة: النسيان المتكرر، تكرار الأسئلة، إضاعة الأشياء، وصعوبة إيجاد الكلمات."
+    },
+    {
+      "questionEn": "Is Alzheimer's the same as normal aging?",
+      "questionAr": "هل ألزهايمر هو نفسه النسيان الطبيعي مع العمر؟",
+      "answerEn": "No. Normal aging causes mild forgetfulness, while Alzheimer's causes progressive decline that affects daily life.",
+      "answerAr": "لا. التقدم في العمر يسبب نسيانا بسيطا، بينما ألزهايمر يسبب تدهورا متزايدا يؤثر على الحياة اليومية."
+    },
+    {
+      "questionEn": "Can Alzheimer's be cured?",
+      "questionAr": "هل يمكن الشفاء من ألزهايمر؟",
+      "answerEn": "There is no complete cure yet, but treatments and healthy routines can help reduce symptoms and support quality of life.",
+      "answerAr": "لا يوجد شفاء تام حتى الآن، لكن العلاجات والروتين الصحي يساعدان في تخفيف الأعراض وتحسين جودة الحياة."
+    },
+    {
+      "questionEn": "How can I help a family member?",
+      "questionAr": "كيف أساعد شخصا من العائلة؟",
+      "answerEn": "Keep routines simple, speak clearly, set medicine reminders, and make the home environment safe.",
+      "answerAr": "حافظ على روتين بسيط، تحدث بوضوح، ضع تذكيرات للدواء، واجعل بيئة المنزل آمنة."
+    },
+    {
+      "questionEn": "When should we see a doctor?",
+      "questionAr": "متى يجب مراجعة الطبيب؟",
+      "answerEn": "See a doctor if memory changes become frequent, worsen over time, or affect safety and daily tasks.",
+      "answerAr": "يجب مراجعة الطبيب إذا أصبح النسيان متكررا، يزداد مع الوقت، أو يؤثر على الأمان والمهام اليومية."
+    },
+    {
+      "questionEn": "Who is at higher risk for Alzheimer's?",
+      "questionAr": "من الأكثر عرضة للإصابة بألزهايمر؟",
+      "answerEn": "Risk increases with age, family history, and some health conditions like diabetes, high blood pressure, and inactivity.",
+      "answerAr": "يزداد الخطر مع التقدم في العمر، والتاريخ العائلي، وبعض الحالات الصحية مثل السكري وارتفاع الضغط وقلة النشاط."
+    },
+    {
+      "questionEn": "Can lifestyle reduce risk?",
+      "questionAr": "هل نمط الحياة يساعد في تقليل الخطر؟",
+      "answerEn": "Yes. Regular exercise, healthy food, social activity, good sleep, and controlling blood pressure may help reduce risk.",
+      "answerAr": "نعم. الرياضة المنتظمة، الغذاء الصحي، النشاط الاجتماعي، النوم الجيد، وضبط الضغط قد تساعد في تقليل الخطر."
+    },
+    {
+      "questionEn": "How is Alzheimer's diagnosed?",
+      "questionAr": "كيف يتم تشخيص ألزهايمر؟",
+      "answerEn": "Doctors use history, memory tests, physical exams, blood tests, and sometimes brain imaging to diagnose it.",
+      "answerAr": "يتم التشخيص عبر التاريخ المرضي واختبارات الذاكرة والفحص السريري وتحاليل الدم وأحيانا تصوير الدماغ."
+    },
+    {
+      "questionEn": "What safety tips help at home?",
+      "questionAr": "ما نصائح الأمان داخل المنزل؟",
+      "answerEn": "Use labels, remove fall hazards, lock dangerous items, improve lighting, and keep emergency numbers easy to reach.",
+      "answerAr": "استخدم ملصقات، أزل مسببات السقوط، أمّن الأدوات الخطرة، حسّن الإضاءة، وضع أرقام الطوارئ في مكان واضح."
+    },
+    {
+      "questionEn": "What should caregivers do for themselves?",
+      "questionAr": "ماذا يفعل مقدمو الرعاية لأنفسهم؟",
+      "answerEn": "Caregivers should rest, ask for family support, join support groups, and schedule breaks to prevent burnout.",
+      "answerAr": "ينبغي لمقدمي الرعاية أخذ راحة، طلب دعم الأسرة، الانضمام لمجموعات الدعم، وتنظيم فترات استراحة لتجنب الإرهاق."
+    },
+    {
+      "questionEn": "Can symptoms change day by day?",
+      "questionAr": "هل يمكن أن تتغير الأعراض من يوم لآخر؟",
+      "answerEn": "Yes. Symptoms can vary with sleep quality, stress, illness, and environment. Keeping routines often helps.",
+      "answerAr": "نعم. قد تختلف الأعراض حسب النوم والتوتر والمرض والبيئة. الحفاظ على الروتين غالبا يساعد."
+    }
+  ]
+}

@@ -1,0 +1,2 @@
+enum AuthFlowRole { patient, doctor }
+
