@@ -2110,6 +2110,366 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Edit profile'**
   String get doctorProfileEditProfileTooltip;
+
+  /// No description provided for @doctorMedConnectFirst.
+  ///
+  /// In en, this message translates to:
+  /// **'Connect a patient first to manage medication.'**
+  String get doctorMedConnectFirst;
+
+  /// No description provided for @doctorMedTitleMedication.
+  ///
+  /// In en, this message translates to:
+  /// **'Medication'**
+  String get doctorMedTitleMedication;
+
+  /// No description provided for @doctorMedViewDetails.
+  ///
+  /// In en, this message translates to:
+  /// **'View Details'**
+  String get doctorMedViewDetails;
+
+  /// No description provided for @doctorMedAllGoodToday.
+  ///
+  /// In en, this message translates to:
+  /// **'All good today'**
+  String get doctorMedAllGoodToday;
+
+  /// No description provided for @doctorMedRequiresAttention.
+  ///
+  /// In en, this message translates to:
+  /// **'Requires attention'**
+  String get doctorMedRequiresAttention;
+
+  /// No description provided for @doctorMedDosesMissedToday.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} doses missed today'**
+  String doctorMedDosesMissedToday(Object count);
+
+  /// No description provided for @doctorMedTotalMedication.
+  ///
+  /// In en, this message translates to:
+  /// **'Total Medication'**
+  String get doctorMedTotalMedication;
+
+  /// No description provided for @doctorMedTakenToday.
+  ///
+  /// In en, this message translates to:
+  /// **'Taken Today'**
+  String get doctorMedTakenToday;
+
+  /// No description provided for @doctorMedMissed.
+  ///
+  /// In en, this message translates to:
+  /// **'Missed'**
+  String get doctorMedMissed;
+
+  /// No description provided for @doctorMedTodaySchedule.
+  ///
+  /// In en, this message translates to:
+  /// **'Today\'s Schedule'**
+  String get doctorMedTodaySchedule;
+
+  /// No description provided for @doctorMedNoMedicationYet.
+  ///
+  /// In en, this message translates to:
+  /// **'No medications yet.'**
+  String get doctorMedNoMedicationYet;
+
+  /// No description provided for @doctorMedAllMedications.
+  ///
+  /// In en, this message translates to:
+  /// **'All Medications'**
+  String get doctorMedAllMedications;
+
+  /// No description provided for @doctorMedAddMedication.
+  ///
+  /// In en, this message translates to:
+  /// **'Add Medication'**
+  String get doctorMedAddMedication;
+
+  /// No description provided for @doctorMedMedicationDetailsButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Medications Details'**
+  String get doctorMedMedicationDetailsButton;
+
+  /// No description provided for @doctorMedNextAt.
+  ///
+  /// In en, this message translates to:
+  /// **'Next: {time}'**
+  String doctorMedNextAt(Object time);
+
+  /// No description provided for @doctorMedStatusTaken.
+  ///
+  /// In en, this message translates to:
+  /// **'Taken'**
+  String get doctorMedStatusTaken;
+
+  /// No description provided for @doctorMedStatusMissed.
+  ///
+  /// In en, this message translates to:
+  /// **'Missed'**
+  String get doctorMedStatusMissed;
+
+  /// No description provided for @doctorMedStatusUpcoming.
+  ///
+  /// In en, this message translates to:
+  /// **'Upcoming'**
+  String get doctorMedStatusUpcoming;
+
+  /// No description provided for @doctorMedDeleteTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete medication?'**
+  String get doctorMedDeleteTitle;
+
+  /// No description provided for @doctorMedDeleteBody.
+  ///
+  /// In en, this message translates to:
+  /// **'This action cannot be undone.'**
+  String get doctorMedDeleteBody;
+
+  /// No description provided for @doctorMedDeleteButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete'**
+  String get doctorMedDeleteButton;
+
+  /// No description provided for @doctorMedDeleteFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not delete medication.'**
+  String get doctorMedDeleteFailed;
+
+  /// No description provided for @doctorMedFrequencyLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'FREQUENCY'**
+  String get doctorMedFrequencyLabel;
+
+  /// No description provided for @doctorMedInstructionsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Instructions'**
+  String get doctorMedInstructionsTitle;
+
+  /// No description provided for @doctorMedNoInstructions.
+  ///
+  /// In en, this message translates to:
+  /// **'No caregiver instructions.'**
+  String get doctorMedNoInstructions;
+
+  /// No description provided for @doctorMedEditMedication.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit Medication'**
+  String get doctorMedEditMedication;
+
+  /// No description provided for @doctorMedDeleteMedication.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete Medication'**
+  String get doctorMedDeleteMedication;
+
+  /// No description provided for @doctorMedSaveChanges.
+  ///
+  /// In en, this message translates to:
+  /// **'Save Changes'**
+  String get doctorMedSaveChanges;
+
+  /// No description provided for @doctorMedSaveMedication.
+  ///
+  /// In en, this message translates to:
+  /// **'Save Medication'**
+  String get doctorMedSaveMedication;
+
+  /// No description provided for @doctorMedCouldNotSave.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not save medication right now.'**
+  String get doctorMedCouldNotSave;
+
+  /// No description provided for @doctorMedCouldNotSaveChanges.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not save changes right now.'**
+  String get doctorMedCouldNotSaveChanges;
+
+  /// No description provided for @doctorMedMedicationNameRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Medication name is required.'**
+  String get doctorMedMedicationNameRequired;
+
+  /// No description provided for @doctorMedMedicationName.
+  ///
+  /// In en, this message translates to:
+  /// **'Medication Name'**
+  String get doctorMedMedicationName;
+
+  /// No description provided for @doctorMedWhatTime.
+  ///
+  /// In en, this message translates to:
+  /// **'What time?'**
+  String get doctorMedWhatTime;
+
+  /// No description provided for @doctorMedPrimaryTime.
+  ///
+  /// In en, this message translates to:
+  /// **'Primary time'**
+  String get doctorMedPrimaryTime;
+
+  /// No description provided for @doctorMedSecondTime.
+  ///
+  /// In en, this message translates to:
+  /// **'Second time'**
+  String get doctorMedSecondTime;
+
+  /// No description provided for @doctorMedThirdTime.
+  ///
+  /// In en, this message translates to:
+  /// **'Third time'**
+  String get doctorMedThirdTime;
+
+  /// No description provided for @doctorMedSetTime.
+  ///
+  /// In en, this message translates to:
+  /// **'Set Time'**
+  String get doctorMedSetTime;
+
+  /// No description provided for @doctorMedHowOften.
+  ///
+  /// In en, this message translates to:
+  /// **'How often?'**
+  String get doctorMedHowOften;
+
+  /// No description provided for @doctorMedOnceDaily.
+  ///
+  /// In en, this message translates to:
+  /// **'Once Daily'**
+  String get doctorMedOnceDaily;
+
+  /// No description provided for @doctorMedTwiceDaily.
+  ///
+  /// In en, this message translates to:
+  /// **'Twice Daily'**
+  String get doctorMedTwiceDaily;
+
+  /// No description provided for @doctorMedThreeDaily.
+  ///
+  /// In en, this message translates to:
+  /// **'Three Daily'**
+  String get doctorMedThreeDaily;
+
+  /// No description provided for @doctorMedNumberOfDays.
+  ///
+  /// In en, this message translates to:
+  /// **'Number of days'**
+  String get doctorMedNumberOfDays;
+
+  /// No description provided for @doctorMedDaysTotal.
+  ///
+  /// In en, this message translates to:
+  /// **'DAYS TOTAL'**
+  String get doctorMedDaysTotal;
+
+  /// No description provided for @doctorMedMedicineType.
+  ///
+  /// In en, this message translates to:
+  /// **'Medicine Type'**
+  String get doctorMedMedicineType;
+
+  /// No description provided for @doctorMedTypeTablet.
+  ///
+  /// In en, this message translates to:
+  /// **'Tablet'**
+  String get doctorMedTypeTablet;
+
+  /// No description provided for @doctorMedTypeSyringe.
+  ///
+  /// In en, this message translates to:
+  /// **'Syringe'**
+  String get doctorMedTypeSyringe;
+
+  /// No description provided for @doctorMedTypeDrink.
+  ///
+  /// In en, this message translates to:
+  /// **'Drink'**
+  String get doctorMedTypeDrink;
+
+  /// No description provided for @doctorMedDose.
+  ///
+  /// In en, this message translates to:
+  /// **'Dose'**
+  String get doctorMedDose;
+
+  /// No description provided for @doctorMedSelectMlAmount.
+  ///
+  /// In en, this message translates to:
+  /// **'Select ml amount'**
+  String get doctorMedSelectMlAmount;
+
+  /// No description provided for @doctorMedDone.
+  ///
+  /// In en, this message translates to:
+  /// **'Done'**
+  String get doctorMedDone;
+
+  /// No description provided for @doctorMedCaregiverInstructions.
+  ///
+  /// In en, this message translates to:
+  /// **'Caregiver Instructions'**
+  String get doctorMedCaregiverInstructions;
+
+  /// No description provided for @doctorMedInstructionHint.
+  ///
+  /// In en, this message translates to:
+  /// **'e.g. Administer with a light meal.\nPatient may be resistant if room is too bright.'**
+  String get doctorMedInstructionHint;
+
+  /// No description provided for @doctorMedStepOneOfTwo.
+  ///
+  /// In en, this message translates to:
+  /// **'Step 1 of 2'**
+  String get doctorMedStepOneOfTwo;
+
+  /// No description provided for @doctorMedNewPrescription.
+  ///
+  /// In en, this message translates to:
+  /// **'New Prescription'**
+  String get doctorMedNewPrescription;
+
+  /// No description provided for @doctorMedDuration.
+  ///
+  /// In en, this message translates to:
+  /// **'Duration'**
+  String get doctorMedDuration;
+
+  /// No description provided for @doctorMedMedicationDetailsHeader.
+  ///
+  /// In en, this message translates to:
+  /// **'Medication Details'**
+  String get doctorMedMedicationDetailsHeader;
+
+  /// No description provided for @doctorMedUnitTabletSingular.
+  ///
+  /// In en, this message translates to:
+  /// **'tablet'**
+  String get doctorMedUnitTabletSingular;
+
+  /// No description provided for @doctorMedUnitTabletPlural.
+  ///
+  /// In en, this message translates to:
+  /// **'tablets'**
+  String get doctorMedUnitTabletPlural;
+
+  /// No description provided for @doctorMedUnitMl.
+  ///
+  /// In en, this message translates to:
+  /// **'ml'**
+  String get doctorMedUnitMl;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

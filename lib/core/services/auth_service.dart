@@ -38,7 +38,6 @@ class AuthService {
   /// Subcollection under `users/patients/` holding one doc per auth uid.
   static const String patientUsersSubcollection = 'users';
 
-
   /// Global serial for public patient ids (`p-1`, `p-2`, …). See [firestore.rules].
   static const String countersCollection = 'counters';
   static const String patientSerialDocId = 'patients';
@@ -63,10 +62,11 @@ class AuthService {
   }
 
   /// Caregiver profile: top-level `careGiver/{uid}`.
-  static DocumentReference<Map<String, dynamic>> caregiverProfileRef(String uid) {
+  static DocumentReference<Map<String, dynamic>> caregiverProfileRef(
+    String uid,
+  ) {
     return _firestore.collection(caregiverCollection).doc(uid);
   }
-
 
   /// Legacy `users/{uid}/patients/profile`.
   static DocumentReference<Map<String, dynamic>> legacyPerUserPatientRef(
@@ -657,5 +657,4 @@ class AuthService {
       rethrow;
     }
   }
-
 }

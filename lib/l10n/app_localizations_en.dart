@@ -1051,4 +1051,188 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get doctorProfileEditProfileTooltip => 'Edit profile';
+
+  @override
+  String get doctorMedConnectFirst => 'Connect a patient first to manage medication.';
+
+  @override
+  String get doctorMedTitleMedication => 'Medication';
+
+  @override
+  String get doctorMedViewDetails => 'View Details';
+
+  @override
+  String get doctorMedAllGoodToday => 'All good today';
+
+  @override
+  String get doctorMedRequiresAttention => 'Requires attention';
+
+  @override
+  String doctorMedDosesMissedToday(Object count) {
+    return '$count doses missed today';
+  }
+
+  @override
+  String get doctorMedTotalMedication => 'Total Medication';
+
+  @override
+  String get doctorMedTakenToday => 'Taken Today';
+
+  @override
+  String get doctorMedMissed => 'Missed';
+
+  @override
+  String get doctorMedTodaySchedule => 'Today\'s Schedule';
+
+  @override
+  String get doctorMedNoMedicationYet => 'No medications yet.';
+
+  @override
+  String get doctorMedAllMedications => 'All Medications';
+
+  @override
+  String get doctorMedAddMedication => 'Add Medication';
+
+  @override
+  String get doctorMedMedicationDetailsButton => 'Medications Details';
+
+  @override
+  String doctorMedNextAt(Object time) {
+    return 'Next: $time';
+  }
+
+  @override
+  String get doctorMedStatusTaken => 'Taken';
+
+  @override
+  String get doctorMedStatusMissed => 'Missed';
+
+  @override
+  String get doctorMedStatusUpcoming => 'Upcoming';
+
+  @override
+  String get doctorMedDeleteTitle => 'Delete medication?';
+
+  @override
+  String get doctorMedDeleteBody => 'This action cannot be undone.';
+
+  @override
+  String get doctorMedDeleteButton => 'Delete';
+
+  @override
+  String get doctorMedDeleteFailed => 'Could not delete medication.';
+
+  @override
+  String get doctorMedFrequencyLabel => 'FREQUENCY';
+
+  @override
+  String get doctorMedInstructionsTitle => 'Instructions';
+
+  @override
+  String get doctorMedNoInstructions => 'No caregiver instructions.';
+
+  @override
+  String get doctorMedEditMedication => 'Edit Medication';
+
+  @override
+  String get doctorMedDeleteMedication => 'Delete Medication';
+
+  @override
+  String get doctorMedSaveChanges => 'Save Changes';
+
+  @override
+  String get doctorMedSaveMedication => 'Save Medication';
+
+  @override
+  String get doctorMedCouldNotSave => 'Could not save medication right now.';
+
+  @override
+  String get doctorMedCouldNotSaveChanges => 'Could not save changes right now.';
+
+  @override
+  String get doctorMedMedicationNameRequired => 'Medication name is required.';
+
+  @override
+  String get doctorMedMedicationName => 'Medication Name';
+
+  @override
+  String get doctorMedWhatTime => 'What time?';
+
+  @override
+  String get doctorMedPrimaryTime => 'Primary time';
+
+  @override
+  String get doctorMedSecondTime => 'Second time';
+
+  @override
+  String get doctorMedThirdTime => 'Third time';
+
+  @override
+  String get doctorMedSetTime => 'Set Time';
+
+  @override
+  String get doctorMedHowOften => 'How often?';
+
+  @override
+  String get doctorMedOnceDaily => 'Once Daily';
+
+  @override
+  String get doctorMedTwiceDaily => 'Twice Daily';
+
+  @override
+  String get doctorMedThreeDaily => 'Three Daily';
+
+  @override
+  String get doctorMedNumberOfDays => 'Number of days';
+
+  @override
+  String get doctorMedDaysTotal => 'DAYS TOTAL';
+
+  @override
+  String get doctorMedMedicineType => 'Medicine Type';
+
+  @override
+  String get doctorMedTypeTablet => 'Tablet';
+
+  @override
+  String get doctorMedTypeSyringe => 'Syringe';
+
+  @override
+  String get doctorMedTypeDrink => 'Drink';
+
+  @override
+  String get doctorMedDose => 'Dose';
+
+  @override
+  String get doctorMedSelectMlAmount => 'Select ml amount';
+
+  @override
+  String get doctorMedDone => 'Done';
+
+  @override
+  String get doctorMedCaregiverInstructions => 'Caregiver Instructions';
+
+  @override
+  String get doctorMedInstructionHint => 'e.g. Administer with a light meal.\nPatient may be resistant if room is too bright.';
+
+  @override
+  String get doctorMedStepOneOfTwo => 'Step 1 of 2';
+
+  @override
+  String get doctorMedNewPrescription => 'New Prescription';
+
+  @override
+  String get doctorMedDuration => 'Duration';
+
+  @override
+  String get doctorMedMedicationDetailsHeader => 'Medication Details';
+
+  @override
+  String get doctorMedUnitTabletSingular => 'tablet';
+
+  @override
+  String get doctorMedUnitTabletPlural => 'tablets';
+
+  @override
+  String get doctorMedUnitMl => 'ml';
 }

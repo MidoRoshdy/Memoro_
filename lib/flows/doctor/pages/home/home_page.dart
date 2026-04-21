@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../../core/constants/string_assets.dart';
 import '../../../../core/theme/app_color_palette.dart';
 import '../../../../l10n/app_localizations.dart';
+import '../chat/doctor_chat_page.dart';
 import '../../doctor_patient_link_stage.dart';
 import '../tabs/doctor_placeholder_tabs.dart';
 import '../tabs/doctor_profile_tab_page.dart';
@@ -54,7 +55,7 @@ class _DoctorHomePageState extends State<DoctorHomePage> {
           });
         },
       ),
-      const DoctorChatTabPage(),
+      const DoctorChatPage(),
       const DoctorGamesTabPage(),
       const DoctorMedicineTabPage(),
       DoctorProfileTabPage(

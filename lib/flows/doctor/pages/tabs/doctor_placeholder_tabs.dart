@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../../core/constants/dimensions.dart';
 import '../../../../core/theme/app_color_palette.dart';
 import '../../../../l10n/app_localizations.dart';
+import '../medicine/doctor_medicine_page.dart';
 
 /// Patient-style “coming soon” shell for caregiver tabs that are not implemented yet.
 class DoctorChatTabPage extends StatelessWidget {
@@ -36,19 +37,12 @@ class DoctorMedicineTabPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context)!;
-    return _DoctorComingSoonTab(
-      icon: Icons.medication_outlined,
-      title: l10n.tabMedicine,
-    );
+    return const DoctorMedicinePage();
   }
 }
 
 class _DoctorComingSoonTab extends StatelessWidget {
-  const _DoctorComingSoonTab({
-    required this.icon,
-    required this.title,
-  });
+  const _DoctorComingSoonTab({required this.icon, required this.title});
 
   final IconData icon;
   final String title;
@@ -65,11 +59,7 @@ class _DoctorComingSoonTab extends StatelessWidget {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(
-                icon,
-                size: 56,
-                color: Colors.white.withValues(alpha: 0.92),
-              ),
+              Icon(icon, size: 56, color: Colors.white.withValues(alpha: 0.92)),
               const SizedBox(height: Dimensions.verticalSpacingMedium),
               Text(
                 title,
@@ -93,7 +83,9 @@ class _DoctorComingSoonTab extends StatelessWidget {
                 padding: appPadding,
                 decoration: BoxDecoration(
                   color: Colors.white.withValues(alpha: 0.92),
-                  borderRadius: BorderRadius.circular(Dimensions.cardCornerRadius),
+                  borderRadius: BorderRadius.circular(
+                    Dimensions.cardCornerRadius,
+                  ),
                 ),
                 child: Text(
                   l10n.chooseFlowCaregiverComingSoon,

@@ -3,8 +3,8 @@ import 'package:flutter/material.dart';
 import '../../../../core/constants/dimensions.dart';
 import '../../../../core/constants/string_assets.dart';
 import '../../../../core/theme/app_color_palette.dart';
-import '../../widgets/app_notifications_action.dart';
 import '../../../../l10n/app_localizations.dart';
+import '../../widgets/app_notifications_action.dart';
 
 class MedicinePage extends StatelessWidget {
   const MedicinePage({super.key});
@@ -154,7 +154,9 @@ class MedicinePage extends StatelessWidget {
                 width: 50,
                 height: 50,
                 child: Padding(
-                  padding: EdgeInsets.all(Dimensions.horizontalSpacingMedium),
+                  padding: const EdgeInsets.all(
+                    Dimensions.horizontalSpacingMedium,
+                  ),
                   child: Image.asset(
                     AppAssets.medcineicon,
                     width: 25,
@@ -244,7 +246,7 @@ class MedicinePage extends StatelessWidget {
             children: [
               Row(
                 children: [
-                  SizedBox(width: 15),
+                  const SizedBox(width: 15),
                   Expanded(
                     child: Text(
                       l10n.medScreenTitle,

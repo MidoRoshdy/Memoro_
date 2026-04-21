@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
-import 'package:memoro/core/constants/string_assets.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 import '../../../../core/constants/dimensions.dart';
+import '../../../../core/models/family_member.dart';
 import '../../../../core/models/patient_public_profile.dart';
+import '../../../../core/services/family_service.dart';
 import '../../../../core/theme/app_color_palette.dart';
 import '../../../../l10n/app_localizations.dart';
+import '../family/doctor_family_page.dart';
 
 const double _doctorCardRadius = 16;
 
@@ -63,6 +66,10 @@ class DoctorPatientCareDashboardPage extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     final theme = Theme.of(context);
+    final doctorUid = FirebaseAuth.instance.currentUser?.uid ?? '';
+    final familyDocId = doctorUid.isEmpty
+        ? ''
+        : FamilyService.buildFamilyDocId(doctorUid, patient.uid);
     final displayName = patient.name.trim().isNotEmpty
         ? patient.name.trim()
         : l10n.profilePlaceholderUserName;
@@ -700,41 +707,79 @@ class DoctorPatientCareDashboardPage extends StatelessWidget {
                     const SizedBox(height: Dimensions.verticalSpacingRegular),
                     SizedBox(
                       height: 48,
-                      child: Stack(
-                        clipBehavior: Clip.none,
-                        children: List.generate(3, (i) {
-                          return PositionedDirectional(
-                            start: i * 28,
-                            child: CircleAvatar(
-                              radius: 24,
-                              backgroundColor: Colors.white,
-                              child: CircleAvatar(
-                                radius: 22,
-                                backgroundColor: AppColorPalette.blueSteel
-                                    .withValues(alpha: 0.12 + i * 0.06),
-                                child: Icon(
-                                  Icons.person_outline_rounded,
-                                  color: AppColorPalette.blueSteel,
+                      child: StreamBuilder<List<FamilyMember>>(
+                        stream: familyDocId.isEmpty
+                            ? const Stream<List<FamilyMember>>.empty()
+                            : FamilyService.watchMembers(familyDocId),
+                        builder: (context, membersSnap) {
+                          final members =
+                              membersSnap.data ?? const <FamilyMember>[];
+                          return Stack(
+                            clipBehavior: Clip.none,
+                            children: List.generate(3, (i) {
+                              final member = i < members.length
+                                  ? members[i]
+                                  : null;
+                              final memberImageUrl = member?.imageUrl.trim() ?? '';
+                              final showImage = memberImageUrl.isNotEmpty;
+                              return PositionedDirectional(
+                                start: i * 28,
+                                child: CircleAvatar(
+                                  radius: 24,
+                                  backgroundColor: Colors.white,
+                                  child: CircleAvatar(
+                                    radius: 22,
+                                    backgroundColor: AppColorPalette.blueSteel
+                                        .withValues(alpha: 0.12 + i * 0.06),
+                                    backgroundImage: showImage
+                                        ? NetworkImage(memberImageUrl)
+                                        : null,
+                                    child: showImage
+                                        ? null
+                                        : Icon(
+                                            Icons.person_outline_rounded,
+                                            color: AppColorPalette.blueSteel,
+                                          ),
+                                  ),
                                 ),
-                              ),
-                            ),
+                              );
+                            }),
                           );
-                        }),
+                        },
                       ),
                     ),
                     const SizedBox(height: Dimensions.verticalSpacingShort),
-                    Text(
-                      l10n.doctorFamilyAccessLine(3),
-                      style: theme.textTheme.bodyMedium?.copyWith(
-                        color: AppColorPalette.grey,
-                        fontWeight: FontWeight.w600,
-                      ),
+                    StreamBuilder<List<FamilyMember>>(
+                      stream: familyDocId.isEmpty
+                          ? const Stream<List<FamilyMember>>.empty()
+                          : FamilyService.watchMembers(familyDocId),
+                      builder: (context, membersSnap) {
+                        final membersCount = membersSnap.data?.length ?? 0;
+                        return Text(
+                          l10n.doctorFamilyAccessLine(membersCount),
+                          style: theme.textTheme.bodyMedium?.copyWith(
+                            color: AppColorPalette.grey,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        );
+                      },
                     ),
                     const SizedBox(height: Dimensions.verticalSpacingRegular),
                     SizedBox(
                       width: double.infinity,
                       child: FilledButton(
-                        onPressed: () {},
+                        onPressed: () {
+                          if (doctorUid.isEmpty) return;
+                          Navigator.of(context).push(
+                            MaterialPageRoute<void>(
+                              builder: (_) => DoctorFamilyPage(
+                                doctorUid: doctorUid,
+                                patientUid: patient.uid,
+                                patientName: displayName,
+                              ),
+                            ),
+                          );
+                        },
                         style: FilledButton.styleFrom(
                           backgroundColor: AppColorPalette.blueSteel,
                           foregroundColor: Colors.white,

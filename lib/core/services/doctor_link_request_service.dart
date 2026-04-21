@@ -87,6 +87,38 @@ abstract final class DoctorLinkRequestService {
     return filtered.first;
   }
 
+  static QueryDocumentSnapshot<Map<String, dynamic>>? pickLatestForPatient(
+    Iterable<QueryDocumentSnapshot<Map<String, dynamic>>> docs,
+    String patientUid, {
+    required String status,
+  }) {
+    final filtered = docs.where((d) {
+      final data = d.data();
+      return (data['patientUid'] as String?) == patientUid &&
+          (data['requestStatus'] as String?) == status;
+    }).toList();
+    if (filtered.isEmpty) return null;
+    filtered.sort((a, b) {
+      final ta = a.data()['createdAt'];
+      final tb = b.data()['createdAt'];
+      if (ta is! Timestamp) return 1;
+      if (tb is! Timestamp) return -1;
+      return tb.compareTo(ta);
+    });
+    return filtered.first;
+  }
+
+  static Stream<QueryDocumentSnapshot<Map<String, dynamic>>?>
+  watchLatestAcceptedForPatient(String patientUid) {
+    return _requests().snapshots().map((snap) {
+      return pickLatestForPatient(
+        snap.docs,
+        patientUid,
+        status: requestStatusAccepted,
+      );
+    });
+  }
+
   /// Pending request for this doctor + patient pair, if any.
   static Future<QueryDocumentSnapshot<Map<String, dynamic>>?>
   findPendingForDoctorAndPatient(String doctorUid, String patientUid) async {

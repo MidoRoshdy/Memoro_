@@ -6,19 +6,18 @@ import '../../../../core/constants/dimensions.dart';
 import '../../../../core/services/chat_service.dart';
 import '../../../../core/services/doctor_link_request_service.dart';
 import '../../../../core/theme/app_color_palette.dart';
-import '../../widgets/app_notifications_action.dart';
 import '../../../../l10n/app_localizations.dart';
 import '../../../shared/chat/chat_conversation_page.dart';
-import 'chat_bot_page.dart';
+import '../../../pationt/widgets/app_notifications_action.dart';
 
-class ChatPage extends StatefulWidget {
-  const ChatPage({super.key});
+class DoctorChatPage extends StatefulWidget {
+  const DoctorChatPage({super.key});
 
   @override
-  State<ChatPage> createState() => _ChatPageState();
+  State<DoctorChatPage> createState() => _DoctorChatPageState();
 }
 
-class _ChatPageState extends State<ChatPage> {
+class _DoctorChatPageState extends State<DoctorChatPage> {
   String _formatChatTime(BuildContext context, DateTime? value) {
     if (value == null) return '--:--';
     final now = DateTime.now();
@@ -144,7 +143,6 @@ class _ChatPageState extends State<ChatPage> {
     final l10n = AppLocalizations.of(context)!;
     final currentUser = FirebaseAuth.instance.currentUser;
     final currentUserId = currentUser?.uid ?? '';
-
     return SafeArea(
       child: Padding(
         padding: appPadding,
@@ -154,59 +152,29 @@ class _ChatPageState extends State<ChatPage> {
             const SizedBox(height: Dimensions.verticalSpacingRegular),
             _searchBox(context, l10n),
             const SizedBox(height: Dimensions.verticalSpacingRegular),
-            _chatTile(
-              context: context,
-              title: l10n.chatAssistantCardTitle,
-              subtitle: l10n.chatAssistantCardSubtitle,
-              time: l10n.chatAssistantTime,
-              leading: Container(
-                width: 74,
-                height: 74,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  border: Border.all(
-                    color: AppColorPalette.blueSteel,
-                    width: 4,
-                  ),
-                ),
-                child: const Icon(
-                  Icons.smart_toy_outlined,
-                  color: AppColorPalette.blueSteel,
-                  size: 36,
-                ),
-              ),
-              onTap: () {
-                Navigator.of(
-                  context,
-                ).push(MaterialPageRoute(builder: (_) => const ChatBotPage()));
-              },
-            ),
-            const SizedBox(height: Dimensions.verticalSpacingRegular),
-            StreamBuilder<QueryDocumentSnapshot<Map<String, dynamic>>?>(
+            StreamBuilder<DoctorLinkStreamState>(
               stream: currentUserId.isEmpty
-                  ? const Stream<QueryDocumentSnapshot<Map<String, dynamic>>?>.empty()
-                  : DoctorLinkRequestService.watchLatestAcceptedForPatient(
-                      currentUserId,
-                    ),
+                  ? const Stream<DoctorLinkStreamState>.empty()
+                  : DoctorLinkRequestService.watchDoctorLinkUiState(currentUserId),
               builder: (context, snapshot) {
-                final request = snapshot.data;
-                final requestData = request?.data();
-                final doctorId = (requestData?['doctorId'] as String?)?.trim() ?? '';
-                final doctorName =
-                    (requestData?['doctorName'] as String?)?.trim().isNotEmpty ==
-                        true
-                    ? (requestData!['doctorName'] as String).trim()
-                    : l10n.chatCaregiverCardTitle;
-                final doctorImageUrl =
-                    (requestData?['doctorImageUrl'] as String?)?.trim() ?? '';
+                final requestData = snapshot.data?.requestData;
+                final patientUid =
+                    (requestData?['patientUid'] as String?)?.trim() ?? '';
                 final patientName =
-                    (requestData?['patientName'] as String?)?.trim() ?? '';
+                    (requestData?['patientName'] as String?)?.trim().isNotEmpty ==
+                        true
+                    ? (requestData!['patientName'] as String).trim()
+                    : 'Patient';
                 final patientImageUrl =
                     (requestData?['patientImageUrl'] as String?)?.trim() ?? '';
-                if (doctorId.isEmpty) {
+                final doctorName =
+                    (requestData?['doctorName'] as String?)?.trim() ?? '';
+                final doctorImageUrl =
+                    (requestData?['doctorImageUrl'] as String?)?.trim() ?? '';
+                if (patientUid.isEmpty) {
                   return _chatTile(
                     context: context,
-                    title: doctorName,
+                    title: patientName,
                     subtitle: l10n.chatCaregiverCardSubtitle,
                     time: '--:--',
                     leading: Container(
@@ -216,10 +184,10 @@ class _ChatPageState extends State<ChatPage> {
                         color: Colors.blueGrey.withValues(alpha: 0.16),
                         shape: BoxShape.circle,
                       ),
-                      child: doctorImageUrl.isNotEmpty
+                      child: patientImageUrl.isNotEmpty
                           ? ClipOval(
                               child: Image.network(
-                                doctorImageUrl,
+                                patientImageUrl,
                                 fit: BoxFit.cover,
                                 width: 74,
                                 height: 74,
@@ -235,8 +203,8 @@ class _ChatPageState extends State<ChatPage> {
                 }
 
                 final chatId = ChatService.buildChatIdFromUids(
-                  doctorId,
                   currentUserId,
+                  patientUid,
                 );
 
                 return StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
@@ -251,7 +219,7 @@ class _ChatPageState extends State<ChatPage> {
                         : null;
                     return _chatTile(
                       context: context,
-                      title: doctorName,
+                      title: patientName,
                       subtitle: (lastMessage != null && lastMessage.isNotEmpty)
                           ? lastMessage
                           : l10n.chatCaregiverCardSubtitle,
@@ -263,10 +231,10 @@ class _ChatPageState extends State<ChatPage> {
                           color: Colors.blueGrey.withValues(alpha: 0.16),
                           shape: BoxShape.circle,
                         ),
-                        child: doctorImageUrl.isNotEmpty
+                        child: patientImageUrl.isNotEmpty
                             ? ClipOval(
                                 child: Image.network(
-                                  doctorImageUrl,
+                                  patientImageUrl,
                                   fit: BoxFit.cover,
                                   width: 74,
                                   height: 74,
@@ -279,18 +247,18 @@ class _ChatPageState extends State<ChatPage> {
                               ),
                       ),
                       onTap: () async {
-                        if (currentUserId.isEmpty || doctorId.isEmpty) {
+                        if (currentUserId.isEmpty || patientUid.isEmpty) {
                           return;
                         }
                         final ensuredChatId =
                             await ChatService.ensureChannelForDoctorPatient(
-                              doctorId: doctorId,
-                              patientUid: currentUserId,
+                              doctorId: currentUserId,
+                              patientUid: patientUid,
                               doctorName: doctorName,
                               doctorImageUrl: doctorImageUrl,
                               patientName: patientName,
                               patientImageUrl: patientImageUrl,
-                              requestId: request?.id,
+                              requestId: snapshot.data?.requestId,
                             );
                         if (!context.mounted) return;
                         Navigator.of(context).push(
@@ -298,8 +266,8 @@ class _ChatPageState extends State<ChatPage> {
                             builder: (_) => ChatConversationPage(
                               chatId: ensuredChatId,
                               currentUserId: currentUserId,
-                              title: doctorName,
-                              avatarUrl: doctorImageUrl,
+                              title: patientName,
+                              avatarUrl: patientImageUrl,
                             ),
                           ),
                         );

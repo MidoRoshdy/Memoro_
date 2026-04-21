@@ -1051,4 +1051,188 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get doctorProfileEditProfileTooltip => 'تعديل الملف';
+
+  @override
+  String get doctorMedConnectFirst => 'اربط مريضًا أولًا لإدارة الأدوية.';
+
+  @override
+  String get doctorMedTitleMedication => 'الدواء';
+
+  @override
+  String get doctorMedViewDetails => 'عرض التفاصيل';
+
+  @override
+  String get doctorMedAllGoodToday => 'كل شيء جيد اليوم';
+
+  @override
+  String get doctorMedRequiresAttention => 'تحتاج متابعة';
+
+  @override
+  String doctorMedDosesMissedToday(Object count) {
+    return '$count جرعات فائتة اليوم';
+  }
+
+  @override
+  String get doctorMedTotalMedication => 'إجمالي الأدوية';
+
+  @override
+  String get doctorMedTakenToday => 'المأخوذ اليوم';
+
+  @override
+  String get doctorMedMissed => 'فائت';
+
+  @override
+  String get doctorMedTodaySchedule => 'جدول اليوم';
+
+  @override
+  String get doctorMedNoMedicationYet => 'لا توجد أدوية بعد.';
+
+  @override
+  String get doctorMedAllMedications => 'كل الأدوية';
+
+  @override
+  String get doctorMedAddMedication => 'إضافة دواء';
+
+  @override
+  String get doctorMedMedicationDetailsButton => 'تفاصيل الأدوية';
+
+  @override
+  String doctorMedNextAt(Object time) {
+    return 'التالي: $time';
+  }
+
+  @override
+  String get doctorMedStatusTaken => 'مأخوذ';
+
+  @override
+  String get doctorMedStatusMissed => 'فائت';
+
+  @override
+  String get doctorMedStatusUpcoming => 'قادم';
+
+  @override
+  String get doctorMedDeleteTitle => 'حذف الدواء؟';
+
+  @override
+  String get doctorMedDeleteBody => 'لا يمكن التراجع عن هذا الإجراء.';
+
+  @override
+  String get doctorMedDeleteButton => 'حذف';
+
+  @override
+  String get doctorMedDeleteFailed => 'تعذّر حذف الدواء.';
+
+  @override
+  String get doctorMedFrequencyLabel => 'التكرار';
+
+  @override
+  String get doctorMedInstructionsTitle => 'التعليمات';
+
+  @override
+  String get doctorMedNoInstructions => 'لا توجد تعليمات من مقدم الرعاية.';
+
+  @override
+  String get doctorMedEditMedication => 'تعديل الدواء';
+
+  @override
+  String get doctorMedDeleteMedication => 'حذف الدواء';
+
+  @override
+  String get doctorMedSaveChanges => 'حفظ التغييرات';
+
+  @override
+  String get doctorMedSaveMedication => 'حفظ الدواء';
+
+  @override
+  String get doctorMedCouldNotSave => 'تعذّر حفظ الدواء الآن.';
+
+  @override
+  String get doctorMedCouldNotSaveChanges => 'تعذّر حفظ التغييرات الآن.';
+
+  @override
+  String get doctorMedMedicationNameRequired => 'اسم الدواء مطلوب.';
+
+  @override
+  String get doctorMedMedicationName => 'اسم الدواء';
+
+  @override
+  String get doctorMedWhatTime => 'في أي وقت؟';
+
+  @override
+  String get doctorMedPrimaryTime => 'الوقت الأساسي';
+
+  @override
+  String get doctorMedSecondTime => 'الوقت الثاني';
+
+  @override
+  String get doctorMedThirdTime => 'الوقت الثالث';
+
+  @override
+  String get doctorMedSetTime => 'تحديد الوقت';
+
+  @override
+  String get doctorMedHowOften => 'عدد المرات';
+
+  @override
+  String get doctorMedOnceDaily => 'مرة يوميًا';
+
+  @override
+  String get doctorMedTwiceDaily => 'مرتين يوميًا';
+
+  @override
+  String get doctorMedThreeDaily => '3 مرات يوميًا';
+
+  @override
+  String get doctorMedNumberOfDays => 'عدد الأيام';
+
+  @override
+  String get doctorMedDaysTotal => 'إجمالي الأيام';
+
+  @override
+  String get doctorMedMedicineType => 'نوع الدواء';
+
+  @override
+  String get doctorMedTypeTablet => 'أقراص';
+
+  @override
+  String get doctorMedTypeSyringe => 'حقنة';
+
+  @override
+  String get doctorMedTypeDrink => 'مشروب';
+
+  @override
+  String get doctorMedDose => 'الجرعة';
+
+  @override
+  String get doctorMedSelectMlAmount => 'اختر كمية المل';
+
+  @override
+  String get doctorMedDone => 'تم';
+
+  @override
+  String get doctorMedCaregiverInstructions => 'تعليمات مقدم الرعاية';
+
+  @override
+  String get doctorMedInstructionHint => 'مثال: يُعطى مع وجبة خفيفة.\nقد يقاوم المريض إذا كانت الغرفة شديدة الإضاءة.';
+
+  @override
+  String get doctorMedStepOneOfTwo => 'الخطوة 1 من 2';
+
+  @override
+  String get doctorMedNewPrescription => 'وصفة جديدة';
+
+  @override
+  String get doctorMedDuration => 'المدة';
+
+  @override
+  String get doctorMedMedicationDetailsHeader => 'تفاصيل الدواء';
+
+  @override
+  String get doctorMedUnitTabletSingular => 'قرص';
+
+  @override
+  String get doctorMedUnitTabletPlural => 'أقراص';
+
+  @override
+  String get doctorMedUnitMl => 'مل';
 }

@@ -7,6 +7,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/constants/dimensions.dart';
 import '../../../../core/models/patient_public_profile.dart';
 import '../../../../core/providers/user_profile_provider.dart';
+import '../../../../core/services/chat_service.dart';
 import '../../../../core/services/doctor_link_request_service.dart';
 import '../../../../l10n/app_localizations.dart';
 import '../../../pationt/widgets/app_notifications_action.dart';
@@ -42,6 +43,23 @@ class _DoctorHomeTabPageState extends ConsumerState<DoctorHomeTabPage> {
 
   StreamSubscription<DoctorLinkStreamState>? _linkSub;
   StreamSubscription<User?>? _authUserSub;
+
+  Future<void> _ensureLinkedChatChannel(DoctorLinkStreamState state) async {
+    final data = state.requestData;
+    if (state.phase != DoctorLinkUiPhase.linked || data == null) return;
+    final doctorId = (data['doctorId'] as String?)?.trim() ?? '';
+    final patientUid = (data['patientUid'] as String?)?.trim() ?? '';
+    if (doctorId.isEmpty || patientUid.isEmpty) return;
+    await ChatService.ensureChannelForDoctorPatient(
+      doctorId: doctorId,
+      patientUid: patientUid,
+      doctorName: (data['doctorName'] as String?)?.trim() ?? '',
+      doctorImageUrl: (data['doctorImageUrl'] as String?)?.trim() ?? '',
+      patientName: (data['patientName'] as String?)?.trim() ?? '',
+      patientImageUrl: (data['patientImageUrl'] as String?)?.trim() ?? '',
+      requestId: state.requestId,
+    );
+  }
 
   @override
   void initState() {
@@ -114,6 +132,7 @@ class _DoctorHomeTabPageState extends ConsumerState<DoctorHomeTabPage> {
     _linkSub = DoctorLinkRequestService.watchDoctorLinkUiState(doctorUid)
         .listen(
           (state) {
+            unawaited(_ensureLinkedChatChannel(state));
             if (!mounted) return;
             setState(() {
               _bootstrapLoading = false;
