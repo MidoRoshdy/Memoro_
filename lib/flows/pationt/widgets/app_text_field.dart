@@ -21,6 +21,8 @@ class AppTextField extends StatefulWidget {
     this.labelAbove = false,
     this.labelAboveStyle,
     this.fillColor,
+    this.minLines,
+    this.maxLines = 1,
   });
 
   final TextEditingController controller;
@@ -49,6 +51,8 @@ class AppTextField extends StatefulWidget {
 
   /// When set, the field uses a solid fill (e.g. white).
   final Color? fillColor;
+  final int? minLines;
+  final int maxLines;
 
   @override
   State<AppTextField> createState() => _AppTextFieldState();
@@ -131,6 +135,8 @@ class _AppTextFieldState extends State<AppTextField> {
       controller: widget.controller,
       focusNode: widget.focusNode,
       obscureText: effectiveObscure,
+      minLines: widget.minLines,
+      maxLines: widget.maxLines,
       keyboardType: widget.keyboardType,
       textInputAction: widget.textInputAction,
       onSubmitted: widget.onSubmitted,

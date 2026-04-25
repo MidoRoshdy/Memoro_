@@ -8,6 +8,7 @@ import 'package:webview_flutter_wkwebview/webview_flutter_wkwebview.dart';
 
 import 'app.dart';
 import 'core/localization/locale_controller.dart';
+import 'core/services/push_notification_service.dart';
 import 'firebase_options.dart';
 
 /// Ensures native WebView implementations are registered before any WebView is built.
@@ -31,14 +32,17 @@ Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   _registerWebViewPlatform();
   await LocaleController.loadSavedLocale();
+  var firebaseReady = false;
   try {
     final options = DefaultFirebaseOptions.currentPlatform;
     final hasRealFirebaseConfig =
         options.apiKey != 'REPLACE_ME' && options.appId != 'REPLACE_ME';
     if (hasRealFirebaseConfig && Firebase.apps.isEmpty) {
       await Firebase.initializeApp(options: options);
+      firebaseReady = true;
     } else if (Firebase.apps.isNotEmpty) {
       debugPrint('Firebase already initialized, skipping duplicate init.');
+      firebaseReady = true;
     } else {
       debugPrint(
         'Firebase skipped: run flutterfire configure to generate real options.',
@@ -48,6 +52,13 @@ Future<void> main() async {
     debugPrint('Firebase init failed: ${e.code} ${e.message}');
   } catch (e) {
     debugPrint('Firebase init failed: $e');
+  }
+  if (firebaseReady) {
+    try {
+      await PushNotificationService.initialize();
+    } catch (e) {
+      debugPrint('Push notification init failed (non-fatal): $e');
+    }
   }
   runApp(const ProviderScope(child: MemoroApp()));
 }

@@ -19,6 +19,9 @@ import '../../flows/pationt/pages/splash/splash_page.dart';
 class AppRouter {
   AppRouter._();
 
+  static final GlobalKey<NavigatorState> navigatorKey =
+      GlobalKey<NavigatorState>();
+
   static const String splash = '/';
   static const String chooseFlow = '/choose-flow';
   static const String login = '/login';

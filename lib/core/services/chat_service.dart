@@ -28,6 +28,20 @@ abstract final class ChatService {
     return chatRef(chatId).collection(messagesSubcollection);
   }
 
+  static int unreadCountForUser(
+    Map<String, dynamic>? chatData,
+    String uid,
+  ) {
+    final cleanUid = uid.trim();
+    if (chatData == null || cleanUid.isEmpty) return 0;
+    final unreadCounts = chatData['unreadCounts'];
+    if (unreadCounts is Map) {
+      final raw = unreadCounts[cleanUid];
+      if (raw is num) return raw.toInt();
+    }
+    return 0;
+  }
+
   static Future<String> ensureChannelForDoctorPatient({
     required String doctorId,
     required String patientUid,
@@ -78,6 +92,32 @@ abstract final class ChatService {
     final msgRef = messagesRef(chatId).doc();
     final now = FieldValue.serverTimestamp();
     await _db.runTransaction((tx) async {
+      final chatSnap = await tx.get(chatRef(chatId));
+      final chatData = chatSnap.data();
+      final rawParticipants = chatData?['participantIds'];
+      final participants = rawParticipants is List
+          ? rawParticipants
+                .whereType<String>()
+                .map((id) => id.trim())
+                .where((id) => id.isNotEmpty)
+                .toSet()
+          : <String>{};
+
+      if (participants.isEmpty) {
+        participants.addAll(
+          chatId
+              .split('_')
+              .map((id) => id.trim())
+              .where((id) => id.isNotEmpty),
+        );
+      }
+
+      final unreadUpdates = <String, dynamic>{};
+      for (final participantId in participants) {
+        if (participantId == senderId.trim()) continue;
+        unreadUpdates['unreadCounts.$participantId'] = FieldValue.increment(1);
+      }
+
       tx.set(msgRef, <String, dynamic>{
         'messageId': msgRef.id,
         'chatId': chatId,
@@ -91,6 +131,27 @@ abstract final class ChatService {
         'lastMessageSenderId': senderId.trim(),
         'lastMessageAt': now,
         'updatedAt': now,
+        ...unreadUpdates,
+      }, SetOptions(merge: true));
+    });
+  }
+
+  static Future<void> resetUnreadCount({
+    required String chatId,
+    required String uid,
+  }) async {
+    final cleanUid = uid.trim();
+    if (cleanUid.isEmpty) return;
+    final ref = chatRef(chatId);
+    await _db.runTransaction((tx) async {
+      final snap = await tx.get(ref);
+      final data = snap.data();
+      final current = unreadCountForUser(data, cleanUid);
+      if (current <= 0) return;
+      tx.set(ref, <String, dynamic>{
+        'unreadCounts.$cleanUid': 0,
+        'lastReadAt.$cleanUid': FieldValue.serverTimestamp(),
+        'updatedAt': FieldValue.serverTimestamp(),
       }, SetOptions(merge: true));
     });
   }

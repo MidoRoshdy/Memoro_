@@ -261,6 +261,9 @@ class AppLocalizationsAr extends AppLocalizations {
   String get tabGames => 'الألعاب';
 
   @override
+  String get tabActivity => 'الأنشطة';
+
+  @override
   String get tabMedicine => 'الدواء';
 
   @override
@@ -385,6 +388,9 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get gameMathSubtitle => 'حل مسائل رياضية بسيطة بأسرع ما يمكن.';
+
+  @override
+  String get patientActivitySectionTitle => 'الأنشطة';
 
   @override
   String get restartTooltip => 'إعادة التشغيل';
@@ -924,6 +930,14 @@ class AppLocalizationsAr extends AppLocalizations {
   String get doctorWellnessScoreLine => 'درجة الرفاهية الإجمالية لهذا الأسبوع.';
 
   @override
+  String get doctorProgressNoItemsYet => 'لا توجد أدوية أو أنشطة مضافة بعد.';
+
+  @override
+  String doctorProgressSummary(Object done, Object total) {
+    return 'اكتمل $done من $total من الأدوية والأنشطة.';
+  }
+
+  @override
   String doctorWellnessPercent(Object percent) {
     return '$percent٪';
   }
@@ -993,6 +1007,196 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get doctorAssignActivity => 'تعيين نشاط';
+
+  @override
+  String get doctorActivityNoActivitiesYet => 'لا توجد أنشطة مضافة بعد.';
+
+  @override
+  String get doctorActivityTitleRequired => 'عنوان النشاط مطلوب.';
+
+  @override
+  String get doctorActivityTitleLabel => 'عنوان النشاط';
+
+  @override
+  String get doctorActivityTitleHint => 'شرب الماء / مشي صباحي / تمارين تمدد';
+
+  @override
+  String get doctorActivityTypeLabel => 'نوع النشاط';
+
+  @override
+  String get doctorActivityTypeWater => 'ماء';
+
+  @override
+  String get doctorActivityTypeExercise => 'تمرين';
+
+  @override
+  String get doctorActivityTypeBreathing => 'تنفس';
+
+  @override
+  String get doctorActivityTypeOther => 'أخرى';
+
+  @override
+  String get doctorActivityTargetLabel => 'الهدف';
+
+  @override
+  String get doctorActivityTargetHint => '8 أكواب / 20 دقيقة / جلسة واحدة';
+
+  @override
+  String doctorActivityTimeLabel(Object time) {
+    return 'الوقت: $time';
+  }
+
+  @override
+  String get doctorActivityInstructionsLabel => 'التعليمات';
+
+  @override
+  String get doctorActivityInstructionsHint => 'أي تفاصيل إضافية للمريض...';
+
+  @override
+  String get doctorActivityDoneButton => 'تم';
+
+  @override
+  String doctorActivityLatestWithTime(Object title, Object time) {
+    return '$title الساعة $time';
+  }
+
+  @override
+  String get doctorActivityNoMissedNow => 'لا توجد أنشطة فائتة حاليًا.';
+
+  @override
+  String doctorActivityOverdueBy(Object duration) {
+    return 'متأخر بمقدار $duration';
+  }
+
+  @override
+  String doctorActivityDurationHoursMinutes(Object hours, Object minutes) {
+    return '$hoursس $minutesد';
+  }
+
+  @override
+  String doctorActivityDurationMinutes(Object minutes) {
+    return '$minutesد';
+  }
+
+  @override
+  String get doctorActivityTotal => 'إجمالي الأنشطة';
+
+  @override
+  String get doctorActivityTakenToday => 'المكتمل اليوم';
+
+  @override
+  String get doctorActivityMissed => 'الفائت';
+
+  @override
+  String get doctorActivityWeeklyProgress => 'التقدم الأسبوعي';
+
+  @override
+  String get doctorActivityWeeklySubtitle => 'الأنشطة المكتملة هذا الأسبوع. أنت على المسار الصحيح للهدف.';
+
+  @override
+  String get doctorActivityRecentResultTitle => 'آخر نتيجة';
+
+  @override
+  String get doctorActivityRecentResultSubtitle => 'تم تحقيق دقة عالية اليوم';
+
+  @override
+  String get doctorActivityAssignDetails => 'تفاصيل التعيين';
+
+  @override
+  String get doctorActivityFinishedOnTime => 'تم الانتهاء في الوقت المحدد';
+
+  @override
+  String get doctorActivityScoreLabel => 'النتيجة';
+
+  @override
+  String get doctorActivityLevel => 'المستوى';
+
+  @override
+  String get doctorActivityAssignedDate => 'تاريخ التعيين';
+
+  @override
+  String get doctorActivityScheduledTime => 'الوقت المحدد';
+
+  @override
+  String get doctorActivityDuration => 'المدة';
+
+  @override
+  String get doctorActivityMinutesUnit => 'دقيقة';
+
+  @override
+  String get doctorActivityAssignedBy => 'تم التعيين بواسطة';
+
+  @override
+  String get doctorActivityPerformanceSummary => 'ملخص الأداء';
+
+  @override
+  String get doctorActivityFinalScore => 'النتيجة النهائية';
+
+  @override
+  String get doctorActivityTimeTaken => 'الوقت المستغرق';
+
+  @override
+  String get doctorActivityCorrectMatches => 'المطابقات الصحيحة';
+
+  @override
+  String get doctorActivityTotalAttempts => 'إجمالي المحاولات';
+
+  @override
+  String get doctorActivityVisibleForPatient => 'مرئي للمريض';
+
+  @override
+  String get doctorActivityEditActivity => 'تعديل النشاط';
+
+  @override
+  String get doctorActivityCancelActivity => 'إلغاء النشاط';
+
+  @override
+  String get doctorActivityStatusCancelled => 'ملغي';
+
+  @override
+  String get doctorActivityAssignedGames => 'الألعاب المعينة';
+
+  @override
+  String get doctorGamesShowMemory => 'إظهار ألعاب الذاكرة';
+
+  @override
+  String get doctorGamesShowOnline => 'إظهار الألعاب عبر الإنترنت';
+
+  @override
+  String get doctorGamesShowSudoku => 'إظهار سودوكو';
+
+  @override
+  String get doctorGamesShowSimon => 'إظهار سيمون يقول';
+
+  @override
+  String get doctorGamesTitleLabel => 'عنوان اللعبة';
+
+  @override
+  String get doctorGamesTitleHint => 'لغز 2048';
+
+  @override
+  String get doctorGamesUrlLabel => 'رابط اللعبة';
+
+  @override
+  String get doctorGamesUrlHint => 'https://...';
+
+  @override
+  String get doctorGamesAddLink => 'إضافة رابط لعبة';
+
+  @override
+  String get doctorGamesRequiredFields => 'يرجى إدخال عنوان اللعبة والرابط.';
+
+  @override
+  String get doctorGamesNoCustomLinks => 'لا توجد روابط مخصصة بعد.';
+
+  @override
+  String get doctorGamesLinkAdded => 'تمت إضافة رابط اللعبة.';
+
+  @override
+  String get doctorGamesHide => 'إخفاء';
+
+  @override
+  String get doctorGamesShow => 'إظهار';
 
   @override
   String get doctorFamilyMembersTitle => 'أفراد العائلة';
@@ -1086,6 +1290,14 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get doctorMedNoMedicationYet => 'لا توجد أدوية بعد.';
+
+  @override
+  String get doctorMedNoMissedNow => 'لا توجد أدوية فائتة حاليًا.';
+
+  @override
+  String doctorMedLatestWithTime(Object title, Object time) {
+    return '$title الساعة $time';
+  }
 
   @override
   String get doctorMedAllMedications => 'كل الأدوية';

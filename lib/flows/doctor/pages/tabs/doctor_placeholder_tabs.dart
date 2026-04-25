@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../../core/constants/dimensions.dart';
 import '../../../../core/theme/app_color_palette.dart';
 import '../../../../l10n/app_localizations.dart';
+import '../games/doctor_games_page.dart';
 import '../medicine/doctor_medicine_page.dart';
 
 /// Patient-style “coming soon” shell for caregiver tabs that are not implemented yet.
@@ -24,11 +25,7 @@ class DoctorGamesTabPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context)!;
-    return _DoctorComingSoonTab(
-      icon: Icons.sports_esports_outlined,
-      title: l10n.tabGames,
-    );
+    return const DoctorGamesPage();
   }
 }
 

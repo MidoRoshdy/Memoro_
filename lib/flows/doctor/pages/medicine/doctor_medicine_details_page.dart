@@ -29,6 +29,22 @@ class DoctorMedicineDetailsPage extends StatelessWidget {
     return AppColorPalette.blueSteel;
   }
 
+  String _formatLastDoseLabel(BuildContext context, DateTime? dateTime) {
+    if (dateTime == null) return '--';
+    final local = dateTime.toLocal();
+    final now = DateTime.now();
+    final sameDay =
+        local.year == now.year &&
+        local.month == now.month &&
+        local.day == now.day;
+    final time = MaterialLocalizations.of(
+      context,
+    ).formatTimeOfDay(TimeOfDay.fromDateTime(local));
+    if (sameDay) return 'Today, $time';
+    final date = MaterialLocalizations.of(context).formatShortDate(local);
+    return '$date, $time';
+  }
+
   Future<void> _delete(BuildContext context) async {
     final l10n = AppLocalizations.of(context)!;
     final sure = await showDialog<bool>(
@@ -199,31 +215,83 @@ class DoctorMedicineDetailsPage extends StatelessWidget {
                         color: Colors.white.withValues(alpha: 0.93),
                         borderRadius: BorderRadius.circular(12),
                       ),
-                      child: Row(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Icon(Icons.access_time_rounded),
-                          const SizedBox(width: 10),
                           Text(
-                            item.primaryTime,
-                            style: Theme.of(context).textTheme.headlineSmall
-                                ?.copyWith(fontWeight: FontWeight.w800),
+                            'ACTIVE SCHEDULE',
+                            style: Theme.of(context).textTheme.labelSmall
+                                ?.copyWith(
+                                  color: AppColorPalette.grey,
+                                  fontWeight: FontWeight.w700,
+                                  letterSpacing: 0.5,
+                                ),
                           ),
-                          if (item.secondaryTime.isNotEmpty) ...[
-                            const SizedBox(width: 8),
-                            Text(
-                              '& ${item.secondaryTime}',
-                              style: Theme.of(context).textTheme.titleLarge
-                                  ?.copyWith(fontWeight: FontWeight.w800),
-                            ),
-                          ],
-                          if (item.thirdTime.isNotEmpty) ...[
-                            const SizedBox(width: 8),
-                            Text(
-                              '& ${item.thirdTime}',
-                              style: Theme.of(context).textTheme.titleLarge
-                                  ?.copyWith(fontWeight: FontWeight.w800),
-                            ),
-                          ],
+                          const SizedBox(
+                            height: Dimensions.verticalSpacingShort,
+                          ),
+                          Row(
+                            children: [
+                              Container(
+                                width: 42,
+                                height: 42,
+                                decoration: BoxDecoration(
+                                  color: Colors.white,
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: const Icon(
+                                  Icons.access_time_rounded,
+                                  color: AppColorPalette.blueSteel,
+                                ),
+                              ),
+                              const SizedBox(
+                                width: Dimensions.horizontalSpacingRegular,
+                              ),
+                              Text(
+                                item.primaryTime,
+                                style: Theme.of(context).textTheme.headlineSmall
+                                    ?.copyWith(fontWeight: FontWeight.w800),
+                              ),
+                              if (item.secondaryTime.isNotEmpty) ...[
+                                const SizedBox(width: 8),
+                                Text(
+                                  'and',
+                                  style: Theme.of(context).textTheme.bodyMedium
+                                      ?.copyWith(
+                                        color: AppColorPalette.grey,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                ),
+                                const SizedBox(width: 8),
+                                Text(
+                                  item.secondaryTime,
+                                  style: Theme.of(context)
+                                      .textTheme
+                                      .headlineSmall
+                                      ?.copyWith(fontWeight: FontWeight.w800),
+                                ),
+                              ],
+                              if (item.thirdTime.isNotEmpty) ...[
+                                const SizedBox(width: 8),
+                                Text(
+                                  'and',
+                                  style: Theme.of(context).textTheme.bodyMedium
+                                      ?.copyWith(
+                                        color: AppColorPalette.grey,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                ),
+                                const SizedBox(width: 8),
+                                Text(
+                                  item.thirdTime,
+                                  style: Theme.of(context)
+                                      .textTheme
+                                      .headlineSmall
+                                      ?.copyWith(fontWeight: FontWeight.w800),
+                                ),
+                              ],
+                            ],
+                          ),
                         ],
                       ),
                     ),
@@ -259,6 +327,99 @@ class DoctorMedicineDetailsPage extends StatelessWidget {
                           ),
                         ],
                       ),
+                    ),
+                    if (item.lastDoseAt != null) ...[
+                      const SizedBox(height: Dimensions.verticalSpacingRegular),
+                      Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.all(
+                          Dimensions.verticalSpacingRegular,
+                        ),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withValues(alpha: 0.93),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                const Icon(
+                                  Icons.history_rounded,
+                                  size: 18,
+                                  color: AppColorPalette.blueSteel,
+                                ),
+                                const SizedBox(width: 6),
+                                Text(
+                                  'Last Dose',
+                                  style: Theme.of(context).textTheme.titleSmall
+                                      ?.copyWith(fontWeight: FontWeight.w800),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              _formatLastDoseLabel(context, item.lastDoseAt),
+                              style: Theme.of(context).textTheme.bodyMedium
+                                  ?.copyWith(
+                                    color: AppColorPalette.grey,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              item.lastDoseVerifiedBy.isNotEmpty
+                                  ? 'VERIFIED BY ${item.lastDoseVerifiedBy.toUpperCase()}'
+                                  : 'VERIFIED BY SYSTEM',
+                              style: Theme.of(context).textTheme.labelSmall
+                                  ?.copyWith(
+                                    color: AppColorPalette.blueSteel,
+                                    fontWeight: FontWeight.w700,
+                                    letterSpacing: 0.4,
+                                  ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                    const SizedBox(height: Dimensions.verticalSpacingRegular),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Daily Progress',
+                          style: Theme.of(context).textTheme.titleLarge
+                              ?.copyWith(
+                                color: Colors.white,
+                                fontWeight: FontWeight.w800,
+                              ),
+                        ),
+                        const SizedBox(height: Dimensions.verticalSpacingShort),
+                        Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: Dimensions.horizontalSpacingRegular,
+                            vertical: Dimensions.verticalSpacingRegular,
+                          ),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withValues(alpha: 0.93),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            crossAxisAlignment: CrossAxisAlignment.end,
+                            children: const [
+                              _DayBar(height: 84, label: 'MON'),
+                              _DayBar(height: 56, label: 'TUE'),
+                              _DayBar(height: 98, label: 'WED'),
+                              _DayBar(height: 120, label: 'THU', active: true),
+                              _DayBar(height: 52, label: 'FRI'),
+                              _DayBar(height: 56, label: 'SAT'),
+                              _DayBar(height: 54, label: 'SUN'),
+                            ],
+                          ),
+                        ),
+                      ],
                     ),
                     const SizedBox(height: Dimensions.verticalSpacingRegular),
                     SizedBox(
@@ -320,6 +481,43 @@ class DoctorMedicineDetailsPage extends StatelessWidget {
           ),
         ),
       ),
+    );
+  }
+}
+
+class _DayBar extends StatelessWidget {
+  const _DayBar({
+    required this.height,
+    required this.label,
+    this.active = false,
+  });
+
+  final double height;
+  final String label;
+  final bool active;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      mainAxisAlignment: MainAxisAlignment.end,
+      children: [
+        Container(
+          width: 28,
+          height: height,
+          decoration: BoxDecoration(
+            color: active ? AppColorPalette.blueSteel : const Color(0xFFE2E5EA),
+            borderRadius: BorderRadius.circular(16),
+          ),
+        ),
+        const SizedBox(height: 6),
+        Text(
+          label,
+          style: Theme.of(context).textTheme.labelSmall?.copyWith(
+            color: active ? AppColorPalette.blueSteel : AppColorPalette.grey,
+            fontWeight: active ? FontWeight.w800 : FontWeight.w600,
+          ),
+        ),
+      ],
     );
   }
 }

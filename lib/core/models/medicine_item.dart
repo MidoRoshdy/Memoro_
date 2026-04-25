@@ -14,6 +14,8 @@ class MedicineItem {
     required this.daysTotal,
     required this.caregiverInstructions,
     required this.status,
+    required this.lastDoseAt,
+    required this.lastDoseVerifiedBy,
     required this.createdByUid,
     required this.createdAt,
   });
@@ -30,6 +32,8 @@ class MedicineItem {
   final int daysTotal;
   final String caregiverInstructions;
   final String status;
+  final DateTime? lastDoseAt;
+  final String lastDoseVerifiedBy;
   final String createdByUid;
   final DateTime? createdAt;
 
@@ -46,11 +50,18 @@ class MedicineItem {
 
   factory MedicineItem.fromFirestore(String id, Map<String, dynamic> data) {
     final rawCreatedAt = data['createdAt'];
+    final rawLastDoseAt = data['lastDoseAt'];
     DateTime? createdAt;
+    DateTime? lastDoseAt;
     if (rawCreatedAt is Timestamp) {
       createdAt = rawCreatedAt.toDate();
     } else if (rawCreatedAt is DateTime) {
       createdAt = rawCreatedAt;
+    }
+    if (rawLastDoseAt is Timestamp) {
+      lastDoseAt = rawLastDoseAt.toDate();
+    } else if (rawLastDoseAt is DateTime) {
+      lastDoseAt = rawLastDoseAt;
     }
 
     final rawTimes = data['scheduledTimes'];
@@ -80,6 +91,8 @@ class MedicineItem {
       caregiverInstructions:
           (data['caregiverInstructions'] as String?)?.trim() ?? '',
       status: (data['status'] as String?)?.trim().toLowerCase() ?? 'upcoming',
+      lastDoseAt: lastDoseAt,
+      lastDoseVerifiedBy: (data['lastDoseVerifiedBy'] as String?)?.trim() ?? '',
       createdByUid: (data['createdByUid'] as String?)?.trim() ?? '',
       createdAt: createdAt,
     );

@@ -261,6 +261,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get tabGames => 'Games';
 
   @override
+  String get tabActivity => 'Activity';
+
+  @override
   String get tabMedicine => 'Medicine';
 
   @override
@@ -385,6 +388,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get gameMathSubtitle => 'Solve simple math as fast as you can.';
+
+  @override
+  String get patientActivitySectionTitle => 'Activities';
 
   @override
   String get restartTooltip => 'Restart';
@@ -924,6 +930,14 @@ class AppLocalizationsEn extends AppLocalizations {
   String get doctorWellnessScoreLine => 'This week\'s overall wellness score.';
 
   @override
+  String get doctorProgressNoItemsYet => 'No medicines or activities assigned yet.';
+
+  @override
+  String doctorProgressSummary(Object done, Object total) {
+    return '$done of $total medicines and activities completed.';
+  }
+
+  @override
   String doctorWellnessPercent(Object percent) {
     return '$percent%';
   }
@@ -993,6 +1007,196 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get doctorAssignActivity => 'Assign Activity';
+
+  @override
+  String get doctorActivityNoActivitiesYet => 'No activities assigned yet.';
+
+  @override
+  String get doctorActivityTitleRequired => 'Activity title is required.';
+
+  @override
+  String get doctorActivityTitleLabel => 'Activity title';
+
+  @override
+  String get doctorActivityTitleHint => 'Drink water / Morning walk / Stretching';
+
+  @override
+  String get doctorActivityTypeLabel => 'Activity type';
+
+  @override
+  String get doctorActivityTypeWater => 'Water';
+
+  @override
+  String get doctorActivityTypeExercise => 'Exercise';
+
+  @override
+  String get doctorActivityTypeBreathing => 'Breathing';
+
+  @override
+  String get doctorActivityTypeOther => 'Other';
+
+  @override
+  String get doctorActivityTargetLabel => 'Target';
+
+  @override
+  String get doctorActivityTargetHint => '8 glasses / 20 mins / 1 session';
+
+  @override
+  String doctorActivityTimeLabel(Object time) {
+    return 'Time: $time';
+  }
+
+  @override
+  String get doctorActivityInstructionsLabel => 'Instructions';
+
+  @override
+  String get doctorActivityInstructionsHint => 'Any extra details for the patient...';
+
+  @override
+  String get doctorActivityDoneButton => 'Done';
+
+  @override
+  String doctorActivityLatestWithTime(Object title, Object time) {
+    return '$title at $time';
+  }
+
+  @override
+  String get doctorActivityNoMissedNow => 'No missed activities right now.';
+
+  @override
+  String doctorActivityOverdueBy(Object duration) {
+    return 'Overdue by $duration';
+  }
+
+  @override
+  String doctorActivityDurationHoursMinutes(Object hours, Object minutes) {
+    return '${hours}h ${minutes}m';
+  }
+
+  @override
+  String doctorActivityDurationMinutes(Object minutes) {
+    return '${minutes}m';
+  }
+
+  @override
+  String get doctorActivityTotal => 'Total Activities';
+
+  @override
+  String get doctorActivityTakenToday => 'Taken Today';
+
+  @override
+  String get doctorActivityMissed => 'Missed';
+
+  @override
+  String get doctorActivityWeeklyProgress => 'Weekly Progress';
+
+  @override
+  String get doctorActivityWeeklySubtitle => 'Activities completed this week. You\'re on track for the target.';
+
+  @override
+  String get doctorActivityRecentResultTitle => 'Recent Result';
+
+  @override
+  String get doctorActivityRecentResultSubtitle => 'High accuracy achieved today';
+
+  @override
+  String get doctorActivityAssignDetails => 'Assign Details';
+
+  @override
+  String get doctorActivityFinishedOnTime => 'Finished on time';
+
+  @override
+  String get doctorActivityScoreLabel => 'Score';
+
+  @override
+  String get doctorActivityLevel => 'Level';
+
+  @override
+  String get doctorActivityAssignedDate => 'Assigned Date';
+
+  @override
+  String get doctorActivityScheduledTime => 'Scheduled Time';
+
+  @override
+  String get doctorActivityDuration => 'Duration';
+
+  @override
+  String get doctorActivityMinutesUnit => 'minutes';
+
+  @override
+  String get doctorActivityAssignedBy => 'Assigned By';
+
+  @override
+  String get doctorActivityPerformanceSummary => 'Performance Summary';
+
+  @override
+  String get doctorActivityFinalScore => 'Final Score';
+
+  @override
+  String get doctorActivityTimeTaken => 'Time Taken';
+
+  @override
+  String get doctorActivityCorrectMatches => 'Correct Matches';
+
+  @override
+  String get doctorActivityTotalAttempts => 'Total Attempts';
+
+  @override
+  String get doctorActivityVisibleForPatient => 'Visible for patient';
+
+  @override
+  String get doctorActivityEditActivity => 'Edit Activity';
+
+  @override
+  String get doctorActivityCancelActivity => 'Cancel Activity';
+
+  @override
+  String get doctorActivityStatusCancelled => 'Cancelled';
+
+  @override
+  String get doctorActivityAssignedGames => 'Assigned Games';
+
+  @override
+  String get doctorGamesShowMemory => 'Show memory games';
+
+  @override
+  String get doctorGamesShowOnline => 'Show online games';
+
+  @override
+  String get doctorGamesShowSudoku => 'Show Sudoku';
+
+  @override
+  String get doctorGamesShowSimon => 'Show Simon Says';
+
+  @override
+  String get doctorGamesTitleLabel => 'Game title';
+
+  @override
+  String get doctorGamesTitleHint => 'Puzzle 2048';
+
+  @override
+  String get doctorGamesUrlLabel => 'Game URL';
+
+  @override
+  String get doctorGamesUrlHint => 'https://...';
+
+  @override
+  String get doctorGamesAddLink => 'Add game link';
+
+  @override
+  String get doctorGamesRequiredFields => 'Please fill game title and URL.';
+
+  @override
+  String get doctorGamesNoCustomLinks => 'No custom links yet.';
+
+  @override
+  String get doctorGamesLinkAdded => 'Game link added.';
+
+  @override
+  String get doctorGamesHide => 'Hide';
+
+  @override
+  String get doctorGamesShow => 'Show';
 
   @override
   String get doctorFamilyMembersTitle => 'Family Members';
@@ -1086,6 +1290,14 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get doctorMedNoMedicationYet => 'No medications yet.';
+
+  @override
+  String get doctorMedNoMissedNow => 'No missed medications right now.';
+
+  @override
+  String doctorMedLatestWithTime(Object title, Object time) {
+    return '$title at $time';
+  }
 
   @override
   String get doctorMedAllMedications => 'All Medications';

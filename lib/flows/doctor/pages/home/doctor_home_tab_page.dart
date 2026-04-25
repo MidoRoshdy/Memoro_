@@ -279,6 +279,7 @@ class _DoctorHomeTabPageState extends ConsumerState<DoctorHomeTabPage> {
         return DoctorPatientCareDashboardPage(
           patient: _resolvedPatient!,
           onOpenChatTab: () => widget.onSelectTab?.call(1),
+          onOpenActivityTab: () => widget.onSelectTab?.call(2),
           onOpenMedicineTab: () => widget.onSelectTab?.call(3),
         );
     }

@@ -1,10 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../../../../core/constants/dimensions.dart';
 import '../../../../core/models/family_member.dart';
+import '../../../../core/models/medicine_item.dart';
+import '../../../../core/models/activity_item.dart';
 import '../../../../core/models/patient_public_profile.dart';
+import '../../../../core/services/activity_service.dart';
+import '../../../../core/services/emergency_request_service.dart';
 import '../../../../core/services/family_service.dart';
+import '../../../../core/services/medicine_service.dart';
 import '../../../../core/theme/app_color_palette.dart';
 import '../../../../l10n/app_localizations.dart';
 import '../family/doctor_family_page.dart';
@@ -26,12 +33,324 @@ class DoctorPatientCareDashboardPage extends StatelessWidget {
     super.key,
     required this.patient,
     required this.onOpenChatTab,
+    required this.onOpenActivityTab,
     required this.onOpenMedicineTab,
   });
 
   final PatientPublicProfile patient;
   final VoidCallback onOpenChatTab;
+  final VoidCallback onOpenActivityTab;
   final VoidCallback onOpenMedicineTab;
+
+  static _NextDoseInfo? _nextDoseInfo(List<MedicineItem> medicines) {
+    if (medicines.isEmpty) return null;
+    final now = DateTime.now();
+    _NextDoseInfo? best;
+
+    for (final medicine in medicines) {
+      final times = medicine.scheduledTimes.isNotEmpty
+          ? medicine.scheduledTimes
+          : <String>[medicine.scheduledTime];
+      final fallbackRaw = medicine.primaryTime.trim();
+
+      DateTime? localBestForMedicine;
+      String localRaw = fallbackRaw;
+      for (final raw in times) {
+        final parsed = _parse24HourTime(raw);
+        if (parsed == null) continue;
+        var candidate = DateTime(
+          now.year,
+          now.month,
+          now.day,
+          parsed.$1,
+          parsed.$2,
+        );
+        if (candidate.isBefore(now)) {
+          candidate = candidate.add(const Duration(days: 1));
+        }
+        if (localBestForMedicine == null ||
+            candidate.isBefore(localBestForMedicine)) {
+          localBestForMedicine = candidate;
+          localRaw = raw;
+        }
+      }
+
+      final info = _NextDoseInfo(
+        medicine: medicine,
+        nextAt: localBestForMedicine,
+        rawTime: localRaw,
+      );
+      if (best == null) {
+        best = info;
+        continue;
+      }
+      if (best.nextAt == null && info.nextAt != null) {
+        best = info;
+        continue;
+      }
+      if (best.nextAt != null &&
+          info.nextAt != null &&
+          info.nextAt!.isBefore(best.nextAt!)) {
+        best = info;
+      }
+    }
+    return best;
+  }
+
+  static (int, int)? _parse24HourTime(String value) {
+    final parts = value.trim().split(':');
+    if (parts.length != 2) return null;
+    final hour = int.tryParse(parts[0]);
+    final minute = int.tryParse(parts[1]);
+    if (hour == null || minute == null) return null;
+    if (hour < 0 || hour > 23 || minute < 0 || minute > 59) return null;
+    return (hour, minute);
+  }
+
+  static String _formatDoseTime(BuildContext context, _NextDoseInfo info) {
+    final nextAt = info.nextAt;
+    if (nextAt != null) {
+      return MaterialLocalizations.of(
+        context,
+      ).formatTimeOfDay(TimeOfDay.fromDateTime(nextAt));
+    }
+    return info.rawTime.trim().isNotEmpty ? info.rawTime : '--';
+  }
+
+  static bool _isEmergencyRequestActive(Map<String, dynamic>? data) {
+    if (data == null) return false;
+    if (data['hasRequest'] == true || data['isActive'] == true) return true;
+    final status =
+        ((data['requestStatus'] ?? data['status']) as String?)
+            ?.trim()
+            .toLowerCase() ??
+        '';
+    return status == 'pending' ||
+        status == 'active' ||
+        status == 'open' ||
+        status == 'sent' ||
+        status == 'requested' ||
+        status == 'new';
+  }
+
+  static DateTime? _extractEmergencyDate(Map<String, dynamic>? data) {
+    if (data == null) return null;
+    final raw =
+        data['requestedAt'] ??
+        data['createdAt'] ??
+        data['timestamp'] ??
+        data['updatedAt'];
+    if (raw is DateTime) return raw;
+    if (raw is Timestamp) return raw.toDate();
+    return null;
+  }
+
+  static String _extractEmergencyName(
+    Map<String, dynamic>? data,
+    String fallbackName,
+  ) {
+    final name =
+        ((data?['requesterName'] ??
+                    data?['patientName'] ??
+                    data?['name'] ??
+                    data?['requestedByName'])
+                as String?)
+            ?.trim() ??
+        '';
+    if (name.isNotEmpty) return name;
+    return fallbackName;
+  }
+
+  static String _formatEmergencyTimeLabel(
+    BuildContext context,
+    DateTime? date,
+    AppLocalizations l10n,
+    bool hasRequest,
+  ) {
+    if (!hasRequest) return l10n.doctorMedAllGoodToday;
+    if (date == null) return l10n.doctorMedRequiresAttention;
+    final local = date.toLocal();
+    final formattedDate = MaterialLocalizations.of(
+      context,
+    ).formatShortDate(local);
+    final formattedTime = MaterialLocalizations.of(
+      context,
+    ).formatTimeOfDay(TimeOfDay.fromDateTime(local));
+    return '$formattedDate, $formattedTime';
+  }
+
+  static double? _asDouble(dynamic raw) {
+    if (raw is num) return raw.toDouble();
+    if (raw is String) return double.tryParse(raw.trim());
+    return null;
+  }
+
+  Future<void> _openEmergencyLocation(
+    BuildContext context,
+    Map<String, dynamic>? emergencyData,
+  ) async {
+    final mapsUrl = (emergencyData?['mapsUrl'] as String?)?.trim() ?? '';
+    Uri? uri;
+    if (mapsUrl.isNotEmpty) {
+      uri = Uri.tryParse(mapsUrl);
+    }
+    uri ??= () {
+      final lat = _asDouble(emergencyData?['latitude']);
+      final lng = _asDouble(emergencyData?['longitude']);
+      if (lat == null || lng == null) return null;
+      return Uri.parse('https://maps.google.com/?q=$lat,$lng');
+    }();
+
+    if (uri == null) {
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('No location available for this SOS request'),
+        ),
+      );
+      return;
+    }
+
+    final launched = await launchUrl(uri, mode: LaunchMode.externalApplication);
+    if (!launched && context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Could not open location map')),
+      );
+    }
+  }
+
+  Future<void> _markEmergencyRequestDone(
+    BuildContext context, {
+    required String emergencyRequestDocId,
+    required String doctorUid,
+  }) async {
+    if (emergencyRequestDocId.trim().isEmpty) return;
+    try {
+      await EmergencyRequestService.requestRef(
+        emergencyRequestDocId,
+      ).set(<String, dynamic>{
+        'hasRequest': false,
+        'isActive': false,
+        'requestStatus': 'resolved',
+        'resolvedBy': doctorUid.trim(),
+        'resolvedAt': FieldValue.serverTimestamp(),
+        'updatedAt': FieldValue.serverTimestamp(),
+      }, SetOptions(merge: true));
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Emergency request marked as done')),
+      );
+    } catch (_) {
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Could not close emergency request')),
+      );
+    }
+  }
+
+  String _resolveEmergencyPhone(Map<String, dynamic>? emergencyData) {
+    final fromEmergency =
+        (emergencyData?['patientPhone'] as String?)?.trim() ?? '';
+    if (fromEmergency.isNotEmpty) return fromEmergency;
+    return patient.phone.trim();
+  }
+
+  Future<void> _openEmergencyCall(
+    BuildContext context,
+    Map<String, dynamic>? emergencyData,
+  ) async {
+    final phone = _resolveEmergencyPhone(emergencyData);
+    if (phone.isEmpty) {
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('No phone number available')),
+      );
+      return;
+    }
+    final uri = Uri.parse('tel:$phone');
+    final launched = await launchUrl(uri, mode: LaunchMode.externalApplication);
+    if (!launched && context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Could not open phone dialer')),
+      );
+    }
+  }
+
+  static _OverdueActivityInfo? _findOverdueActivity(
+    List<ActivityItem> activities,
+  ) {
+    if (activities.isEmpty) return null;
+    final now = DateTime.now();
+    _OverdueActivityInfo? best;
+
+    for (final activity in activities) {
+      if (activity.isCompleted) continue;
+      final parsed = _parse24HourTime(activity.scheduledTime);
+      if (parsed == null) continue;
+      final scheduled = DateTime(
+        now.year,
+        now.month,
+        now.day,
+        parsed.$1,
+        parsed.$2,
+      );
+      if (!scheduled.isBefore(now)) continue;
+      final overdue = now.difference(scheduled);
+      if (best == null || overdue > best.overdueBy) {
+        best = _OverdueActivityInfo(activity: activity, overdueBy: overdue);
+      }
+    }
+    return best;
+  }
+
+  static String _formatOverdueDuration(
+    AppLocalizations l10n,
+    Duration duration,
+  ) {
+    final hours = duration.inHours;
+    final minutes = duration.inMinutes.remainder(60);
+    if (hours > 0) {
+      return l10n.doctorActivityDurationHoursMinutes(hours, minutes);
+    }
+    final safeMinutes = duration.inMinutes <= 0 ? 1 : duration.inMinutes;
+    return l10n.doctorActivityDurationMinutes(safeMinutes);
+  }
+
+  static _OverdueMedicationInfo? _findOverdueMedication(
+    List<MedicineItem> medicines,
+  ) {
+    if (medicines.isEmpty) return null;
+    final now = DateTime.now();
+    _OverdueMedicationInfo? best;
+
+    for (final medicine in medicines) {
+      if (medicine.isTaken) continue;
+      final times = medicine.scheduledTimes.isNotEmpty
+          ? medicine.scheduledTimes
+          : <String>[medicine.scheduledTime];
+      for (final raw in times) {
+        final parsed = _parse24HourTime(raw);
+        if (parsed == null) continue;
+        final scheduled = DateTime(
+          now.year,
+          now.month,
+          now.day,
+          parsed.$1,
+          parsed.$2,
+        );
+        if (!scheduled.isBefore(now)) continue;
+        final overdue = now.difference(scheduled);
+        if (best == null || overdue > best.overdueBy) {
+          best = _OverdueMedicationInfo(
+            medicine: medicine,
+            overdueBy: overdue,
+            scheduledTime: raw,
+          );
+        }
+      }
+    }
+    return best;
+  }
 
   static Widget _doctorSolidCard({required Widget child}) {
     return Container(
@@ -70,19 +389,23 @@ class DoctorPatientCareDashboardPage extends StatelessWidget {
     final familyDocId = doctorUid.isEmpty
         ? ''
         : FamilyService.buildFamilyDocId(doctorUid, patient.uid);
+    final medicineDocId = doctorUid.isEmpty
+        ? ''
+        : MedicineService.buildMedicineDocId(doctorUid, patient.uid);
+    final activityDocId = doctorUid.isEmpty
+        ? ''
+        : ActivityService.buildActivityDocId(doctorUid, patient.uid);
+    final emergencyRequestDocId = doctorUid.isEmpty
+        ? ''
+        : EmergencyRequestService.buildEmergencyRequestDocId(
+            doctorUid,
+            patient.uid,
+          );
     final displayName = patient.name.trim().isNotEmpty
         ? patient.name.trim()
         : l10n.profilePlaceholderUserName;
     final ageLabel = patient.age != null ? '${patient.age}' : '—';
     final imageUrl = patient.imageUrl.trim();
-    final subtitleLines = l10n.doctorEmergencyRequestSubtitle.split('\n');
-    final emergencyNameLine = subtitleLines.isNotEmpty
-        ? subtitleLines.first.trim()
-        : '';
-    final emergencyTimeLine = subtitleLines.length > 1
-        ? subtitleLines[1].trim()
-        : '';
-
     return Stack(
       children: [
         SingleChildScrollView(
@@ -90,200 +413,287 @@ class DoctorPatientCareDashboardPage extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               const SizedBox(height: Dimensions.verticalSpacingShort),
-              Container(
-                width: double.infinity,
-                decoration: BoxDecoration(
-                  color: _emergencyCardSurface,
-                  borderRadius: BorderRadius.circular(_doctorCardRadius),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.07),
-                      blurRadius: 12,
-                      offset: const Offset(0, 4),
-                    ),
-                  ],
-                ),
-                clipBehavior: Clip.antiAlias,
-                child: IntrinsicHeight(
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      Container(width: 6, color: AppColorPalette.redBright),
-                      Expanded(
-                        child: Padding(
-                          padding: appPadding,
-                          child: Column(
-                            mainAxisSize: MainAxisSize.min,
-                            crossAxisAlignment: CrossAxisAlignment.stretch,
-                            children: [
-                              Row(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Icon(
-                                    Icons.warning_rounded,
-                                    size: 30,
-                                    color: AppColorPalette.redBright,
-                                  ),
-                                  const SizedBox(
-                                    width: Dimensions.verticalSpacingRegular,
-                                  ),
-                                  Expanded(
-                                    child: Padding(
-                                      padding: const EdgeInsets.only(top: 2),
-                                      child: Column(
-                                        crossAxisAlignment:
-                                            CrossAxisAlignment.start,
-                                        children: [
-                                          Text(
-                                            l10n.doctorEmergencyRequestTitle,
-                                            style: theme.textTheme.titleMedium
-                                                ?.copyWith(
-                                                  fontWeight: FontWeight.w800,
-                                                  color:
-                                                      AppColorPalette.redDark,
-                                                  height: 1.2,
-                                                ),
-                                          ),
-                                          if (emergencyNameLine.isNotEmpty) ...[
-                                            const SizedBox(
-                                              height: Dimensions
-                                                  .verticalSpacingExtraShort,
-                                            ),
-                                            Text(
-                                              emergencyNameLine,
-                                              style: theme.textTheme.bodyMedium
-                                                  ?.copyWith(
-                                                    fontWeight: FontWeight.w500,
-                                                    color:
-                                                        _emergencySecondaryRed,
-                                                    height: 1.25,
-                                                  ),
-                                            ),
-                                          ],
-                                          if (emergencyTimeLine.isNotEmpty) ...[
-                                            const SizedBox(
-                                              height: Dimensions
-                                                  .verticalSpacingExtraShort,
-                                            ),
-                                            Text(
-                                              emergencyTimeLine,
-                                              style: theme.textTheme.bodyMedium
-                                                  ?.copyWith(
-                                                    fontWeight: FontWeight.w500,
-                                                    color:
-                                                        _emergencySecondaryRed,
-                                                    height: 1.25,
-                                                  ),
-                                            ),
-                                          ],
-                                        ],
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              const SizedBox(
-                                height: Dimensions.verticalSpacingRegular,
-                              ),
-                              Row(
-                                children: [
-                                  Expanded(
-                                    child: FilledButton.icon(
-                                      onPressed: () {},
-                                      icon: const Icon(
-                                        Icons.call_rounded,
-                                        size: 18,
-                                      ),
-                                      label: Text(l10n.doctorCallButton),
-                                      style: FilledButton.styleFrom(
-                                        backgroundColor: const Color(
-                                          0xFFE53935,
-                                        ),
-                                        foregroundColor: Colors.white,
-                                        padding: const EdgeInsets.symmetric(
-                                          vertical: 12,
-                                        ),
-                                        shape: RoundedRectangleBorder(
-                                          borderRadius: BorderRadius.circular(
-                                            _emergencyButtonRadius,
-                                          ),
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                                  const SizedBox(
-                                    width: Dimensions.verticalSpacingShort,
-                                  ),
-                                  Expanded(
-                                    child: OutlinedButton.icon(
-                                      onPressed: () {},
-                                      icon: const Icon(
-                                        Icons.location_on_outlined,
-                                        size: 18,
-                                      ),
-                                      label: Text(l10n.doctorLocationButton),
-                                      style: OutlinedButton.styleFrom(
-                                        foregroundColor: const Color(
-                                          0xFFE53935,
-                                        ),
-                                        backgroundColor: Colors.white,
-                                        side: BorderSide(
-                                          color: AppColorPalette.redBright
-                                              .withValues(alpha: 0.45),
-                                          width: 1.2,
-                                        ),
-                                        padding: const EdgeInsets.symmetric(
-                                          vertical: 12,
-                                        ),
-                                        shape: RoundedRectangleBorder(
-                                          borderRadius: BorderRadius.circular(
-                                            _emergencyButtonRadius,
-                                          ),
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                                  const SizedBox(
-                                    width: Dimensions.verticalSpacingShort,
-                                  ),
-                                  Expanded(
-                                    child: OutlinedButton.icon(
-                                      onPressed: () {},
-                                      icon: const Icon(
-                                        Icons.chat_bubble_outline_rounded,
-                                        size: 18,
-                                      ),
-                                      label: Text(l10n.doctorMessageButton),
-                                      style: OutlinedButton.styleFrom(
-                                        foregroundColor: const Color(
-                                          0xFFE53935,
-                                        ),
-                                        backgroundColor: Colors.white,
-                                        side: BorderSide(
-                                          color: AppColorPalette.redBright
-                                              .withValues(alpha: 0.45),
-                                          width: 1.2,
-                                        ),
-                                        padding: const EdgeInsets.symmetric(
-                                          vertical: 12,
-                                        ),
-                                        shape: RoundedRectangleBorder(
-                                          borderRadius: BorderRadius.circular(
-                                            _emergencyButtonRadius,
-                                          ),
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ],
-                          ),
-                        ),
+              StreamBuilder<Map<String, dynamic>?>(
+                stream: emergencyRequestDocId.isEmpty
+                    ? const Stream<Map<String, dynamic>?>.empty()
+                    : EmergencyRequestService.watchRequest(
+                        emergencyRequestDocId,
                       ),
-                    ],
-                  ),
-                ),
+                builder: (context, emergencySnap) {
+                  final emergencyData = emergencySnap.data;
+                  final hasRequest = _isEmergencyRequestActive(emergencyData);
+                  final nameLine = _extractEmergencyName(
+                    emergencyData,
+                    displayName,
+                  );
+                  final timeLine = _formatEmergencyTimeLabel(
+                    context,
+                    _extractEmergencyDate(emergencyData),
+                    l10n,
+                    hasRequest,
+                  );
+                  final accent = hasRequest
+                      ? AppColorPalette.redBright
+                      : const Color(0xFF4CAF50);
+                  final icon = hasRequest
+                      ? Icons.warning_rounded
+                      : Icons.verified_rounded;
+
+                  return Container(
+                    width: double.infinity,
+                    decoration: BoxDecoration(
+                      color: _emergencyCardSurface,
+                      borderRadius: BorderRadius.circular(_doctorCardRadius),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.07),
+                          blurRadius: 12,
+                          offset: const Offset(0, 4),
+                        ),
+                      ],
+                    ),
+                    clipBehavior: Clip.antiAlias,
+                    child: IntrinsicHeight(
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          Container(width: 6, color: accent),
+                          Expanded(
+                            child: Padding(
+                              padding: appPadding,
+                              child: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                crossAxisAlignment: CrossAxisAlignment.stretch,
+                                children: [
+                                  Row(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Icon(icon, size: 30, color: accent),
+                                      const SizedBox(
+                                        width:
+                                            Dimensions.verticalSpacingRegular,
+                                      ),
+                                      Expanded(
+                                        child: Padding(
+                                          padding: const EdgeInsets.only(
+                                            top: 2,
+                                          ),
+                                          child: Column(
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.start,
+                                            children: [
+                                              Text(
+                                                l10n.doctorEmergencyRequestTitle,
+                                                style: theme
+                                                    .textTheme
+                                                    .titleMedium
+                                                    ?.copyWith(
+                                                      fontWeight:
+                                                          FontWeight.w800,
+                                                      color: hasRequest
+                                                          ? AppColorPalette
+                                                                .redDark
+                                                          : AppColorPalette
+                                                                .emerald,
+                                                      height: 1.2,
+                                                    ),
+                                              ),
+                                              if (hasRequest) ...[
+                                                const SizedBox(
+                                                  height: Dimensions
+                                                      .verticalSpacingExtraShort,
+                                                ),
+                                                Text(
+                                                  nameLine,
+                                                  style: theme
+                                                      .textTheme
+                                                      .bodyMedium
+                                                      ?.copyWith(
+                                                        fontWeight:
+                                                            FontWeight.w500,
+                                                        color:
+                                                            _emergencySecondaryRed,
+                                                        height: 1.25,
+                                                      ),
+                                                ),
+                                              ],
+                                              const SizedBox(
+                                                height: Dimensions
+                                                    .verticalSpacingExtraShort,
+                                              ),
+                                              Text(
+                                                timeLine,
+                                                style: theme
+                                                    .textTheme
+                                                    .bodyMedium
+                                                    ?.copyWith(
+                                                      fontWeight:
+                                                          FontWeight.w500,
+                                                      color: hasRequest
+                                                          ? _emergencySecondaryRed
+                                                          : AppColorPalette
+                                                                .tealDark,
+                                                      height: 1.25,
+                                                    ),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                      ),
+                                      if (hasRequest)
+                                        TextButton.icon(
+                                          onPressed: () =>
+                                              _markEmergencyRequestDone(
+                                                context,
+                                                emergencyRequestDocId:
+                                                    emergencyRequestDocId,
+                                                doctorUid: doctorUid,
+                                              ),
+                                          icon: const Icon(
+                                            Icons.check_circle_rounded,
+                                            size: 18,
+                                          ),
+                                          label: const Text('Done'),
+                                          style: TextButton.styleFrom(
+                                            foregroundColor:
+                                                AppColorPalette.emerald,
+                                            padding: const EdgeInsets.symmetric(
+                                              horizontal: 8,
+                                              vertical: 4,
+                                            ),
+                                            minimumSize: const Size(0, 32),
+                                            tapTargetSize: MaterialTapTargetSize
+                                                .shrinkWrap,
+                                          ),
+                                        ),
+                                    ],
+                                  ),
+                                  if (hasRequest) ...[
+                                    const SizedBox(
+                                      height: Dimensions.verticalSpacingRegular,
+                                    ),
+                                    Row(
+                                      children: [
+                                        Expanded(
+                                          child: FilledButton.icon(
+                                            onPressed: () => _openEmergencyCall(
+                                              context,
+                                              emergencyData,
+                                            ),
+                                            icon: const Icon(
+                                              Icons.call_rounded,
+                                              size: 18,
+                                            ),
+                                            label: Text(l10n.doctorCallButton),
+                                            style: FilledButton.styleFrom(
+                                              backgroundColor: const Color(
+                                                0xFFE53935,
+                                              ),
+                                              foregroundColor: Colors.white,
+                                              padding:
+                                                  const EdgeInsets.symmetric(
+                                                    vertical: 12,
+                                                  ),
+                                              shape: RoundedRectangleBorder(
+                                                borderRadius:
+                                                    BorderRadius.circular(
+                                                      _emergencyButtonRadius,
+                                                    ),
+                                              ),
+                                            ),
+                                          ),
+                                        ),
+                                        const SizedBox(
+                                          width:
+                                              Dimensions.verticalSpacingShort,
+                                        ),
+                                        Expanded(
+                                          child: OutlinedButton.icon(
+                                            onPressed: () =>
+                                                _openEmergencyLocation(
+                                                  context,
+                                                  emergencyData,
+                                                ),
+                                            icon: const Icon(
+                                              Icons.location_on_outlined,
+                                              size: 18,
+                                            ),
+                                            label: Text(
+                                              l10n.doctorLocationButton,
+                                            ),
+                                            style: OutlinedButton.styleFrom(
+                                              foregroundColor: const Color(
+                                                0xFFE53935,
+                                              ),
+                                              backgroundColor: Colors.white,
+                                              side: BorderSide(
+                                                color: AppColorPalette.redBright
+                                                    .withValues(alpha: 0.45),
+                                                width: 1.2,
+                                              ),
+                                              padding:
+                                                  const EdgeInsets.symmetric(
+                                                    vertical: 12,
+                                                  ),
+                                              shape: RoundedRectangleBorder(
+                                                borderRadius:
+                                                    BorderRadius.circular(
+                                                      _emergencyButtonRadius,
+                                                    ),
+                                              ),
+                                            ),
+                                          ),
+                                        ),
+                                        const SizedBox(
+                                          width:
+                                              Dimensions.verticalSpacingShort,
+                                        ),
+                                        Expanded(
+                                          child: OutlinedButton.icon(
+                                            onPressed: onOpenChatTab,
+                                            icon: const Icon(
+                                              Icons.chat_bubble_outline_rounded,
+                                              size: 18,
+                                            ),
+                                            label: Text(
+                                              l10n.doctorMessageButton,
+                                            ),
+                                            style: OutlinedButton.styleFrom(
+                                              foregroundColor: const Color(
+                                                0xFFE53935,
+                                              ),
+                                              backgroundColor: Colors.white,
+                                              side: BorderSide(
+                                                color: AppColorPalette.redBright
+                                                    .withValues(alpha: 0.45),
+                                                width: 1.2,
+                                              ),
+                                              padding:
+                                                  const EdgeInsets.symmetric(
+                                                    vertical: 12,
+                                                  ),
+                                              shape: RoundedRectangleBorder(
+                                                borderRadius:
+                                                    BorderRadius.circular(
+                                                      _emergencyButtonRadius,
+                                                    ),
+                                              ),
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ],
+                                ],
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  );
+                },
               ),
               const SizedBox(height: Dimensions.verticalSpacingRegular),
               _doctorDashedCard(
@@ -391,47 +801,85 @@ class DoctorPatientCareDashboardPage extends StatelessWidget {
               ),
               const SizedBox(height: Dimensions.verticalSpacingRegular),
               _doctorDashedCard(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          l10n.doctorPatientProgressTitle,
-                          style: theme.textTheme.titleMedium?.copyWith(
-                            fontWeight: FontWeight.w700,
-                            color: const Color(0xFF4A90E2),
-                          ),
-                        ),
-                        Text(
-                          l10n.doctorWellnessPercent('70'),
-                          style: theme.textTheme.titleMedium?.copyWith(
-                            fontWeight: FontWeight.w800,
-                            color: const Color(0xFF4A90E2),
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: Dimensions.verticalSpacingShort),
-                    ClipRRect(
-                      borderRadius: BorderRadius.circular(999),
-                      child: LinearProgressIndicator(
-                        value: 0.7,
-                        minHeight: 14,
-                        backgroundColor: const Color(0xFFE8EEF2),
-                        color: const Color(0xFF4A90E2),
-                      ),
-                    ),
-                    const SizedBox(height: Dimensions.verticalSpacingShort),
-                    Text(
-                      l10n.doctorWellnessScoreLine,
-                      style: theme.textTheme.bodySmall?.copyWith(
-                        color: AppColorPalette.grey,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ],
+                child: StreamBuilder<List<MedicineItem>>(
+                  stream: medicineDocId.isEmpty
+                      ? const Stream<List<MedicineItem>>.empty()
+                      : MedicineService.watchMedicines(medicineDocId),
+                  builder: (context, medSnap) {
+                    final meds = medSnap.data ?? const <MedicineItem>[];
+                    final medsDone = meds.where((m) => m.isTaken).length;
+                    return StreamBuilder<List<ActivityItem>>(
+                      stream: activityDocId.isEmpty
+                          ? const Stream<List<ActivityItem>>.empty()
+                          : ActivityService.watchActivities(activityDocId),
+                      builder: (context, activitySnap) {
+                        final activities =
+                            activitySnap.data ?? const <ActivityItem>[];
+                        final activitiesDone = activities
+                            .where((a) => a.isCompleted)
+                            .length;
+                        final totalCount = meds.length + activities.length;
+                        final completedCount = medsDone + activitiesDone;
+                        final progressValue = totalCount == 0
+                            ? 0.0
+                            : (completedCount / totalCount).clamp(0.0, 1.0);
+                        final percent = (progressValue * 100).round();
+                        final summary = totalCount == 0
+                            ? l10n.doctorProgressNoItemsYet
+                            : l10n.doctorProgressSummary(
+                                completedCount,
+                                totalCount,
+                              );
+
+                        return Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Text(
+                                  l10n.doctorPatientProgressTitle,
+                                  style: theme.textTheme.titleMedium?.copyWith(
+                                    fontWeight: FontWeight.w700,
+                                    color: const Color(0xFF4A90E2),
+                                  ),
+                                ),
+                                Text(
+                                  l10n.doctorWellnessPercent('$percent'),
+                                  style: theme.textTheme.titleMedium?.copyWith(
+                                    fontWeight: FontWeight.w800,
+                                    color: const Color(0xFF4A90E2),
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(
+                              height: Dimensions.verticalSpacingShort,
+                            ),
+                            ClipRRect(
+                              borderRadius: BorderRadius.circular(999),
+                              child: LinearProgressIndicator(
+                                value: progressValue,
+                                minHeight: 14,
+                                backgroundColor: const Color(0xFFE8EEF2),
+                                color: const Color(0xFF4A90E2),
+                              ),
+                            ),
+                            const SizedBox(
+                              height: Dimensions.verticalSpacingShort,
+                            ),
+                            Text(
+                              summary,
+                              style: theme.textTheme.bodySmall?.copyWith(
+                                color: AppColorPalette.grey,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ],
+                        );
+                      },
+                    );
+                  },
                 ),
               ),
               const SizedBox(height: Dimensions.verticalSpacingLarge),
@@ -458,29 +906,107 @@ class DoctorPatientCareDashboardPage extends StatelessWidget {
               _doctorSolidCard(
                 child: Column(
                   children: [
-                    _alertDetailBlock(
-                      context,
-                      icon: Icons.error_outline_rounded,
-                      iconColor: AppColorPalette.redBright,
-                      iconBg: AppColorPalette.peachPink,
-                      title: l10n.doctorAlertMissedMedication,
-                      detail: l10n.doctorAlertMissedMedDetail,
-                      meta: l10n.doctorAlertMissedMedOverdue,
-                      metaColor: AppColorPalette.redBright,
+                    StreamBuilder<List<MedicineItem>>(
+                      stream: medicineDocId.isEmpty
+                          ? const Stream<List<MedicineItem>>.empty()
+                          : MedicineService.watchMedicines(medicineDocId),
+                      builder: (context, medSnap) {
+                        final medicines =
+                            medSnap.data ?? const <MedicineItem>[];
+                        final overdue = _findOverdueMedication(medicines);
+                        if (overdue == null) {
+                          return _alertDetailBlock(
+                            context,
+                            icon: Icons.check_circle_outline_rounded,
+                            iconColor: AppColorPalette.emerald,
+                            iconBg: AppColorPalette.mint.withValues(
+                              alpha: 0.75,
+                            ),
+                            title: l10n.doctorAlertMissedMedication,
+                            detail: l10n.doctorMedNoMissedNow,
+                            meta: l10n.doctorMedAllGoodToday,
+                            metaColor: AppColorPalette.emerald,
+                            actionLabel: l10n.doctorMedViewDetails,
+                            onActionTap: onOpenMedicineTab,
+                          );
+                        }
+                        final overdueDurationLabel = _formatOverdueDuration(
+                          l10n,
+                          overdue.overdueBy,
+                        );
+                        final overdueDetail = overdue.scheduledTime.isNotEmpty
+                            ? l10n.doctorMedLatestWithTime(
+                                overdue.medicine.name,
+                                overdue.scheduledTime,
+                              )
+                            : overdue.medicine.name;
+                        return _alertDetailBlock(
+                          context,
+                          icon: Icons.error_outline_rounded,
+                          iconColor: AppColorPalette.redBright,
+                          iconBg: AppColorPalette.peachPink,
+                          title: l10n.doctorAlertMissedMedication,
+                          detail: overdueDetail,
+                          meta: l10n.doctorActivityOverdueBy(
+                            overdueDurationLabel,
+                          ),
+                          metaColor: AppColorPalette.redBright,
+                          actionLabel: l10n.doctorMedViewDetails,
+                          onActionTap: onOpenMedicineTab,
+                        );
+                      },
                     ),
                     Divider(
                       height: Dimensions.verticalSpacingLarge,
                       color: AppColorPalette.lightGrey.withValues(alpha: 0.5),
                     ),
-                    _alertDetailBlock(
-                      context,
-                      icon: Icons.notifications_active_outlined,
-                      iconColor: const Color(0xFFEA580C),
-                      iconBg: AppColorPalette.gold.withValues(alpha: 0.45),
-                      title: l10n.doctorAlertActivityReminder,
-                      detail: l10n.doctorAlertActivityDetail,
-                      meta: l10n.doctorAlertActivityDue,
-                      metaColor: const Color(0xFFEA580C),
+                    StreamBuilder<List<ActivityItem>>(
+                      stream: activityDocId.isEmpty
+                          ? const Stream<List<ActivityItem>>.empty()
+                          : ActivityService.watchActivities(activityDocId),
+                      builder: (context, activitySnap) {
+                        final activities =
+                            activitySnap.data ?? const <ActivityItem>[];
+                        final overdue = _findOverdueActivity(activities);
+                        if (overdue == null) {
+                          return _alertDetailBlock(
+                            context,
+                            icon: Icons.check_circle_outline_rounded,
+                            iconColor: AppColorPalette.emerald,
+                            iconBg: AppColorPalette.mint.withValues(
+                              alpha: 0.75,
+                            ),
+                            title: l10n.doctorAlertActivityReminder,
+                            detail: l10n.doctorActivityNoMissedNow,
+                            meta: l10n.doctorMedAllGoodToday,
+                            metaColor: AppColorPalette.emerald,
+                          );
+                        }
+                        final overdueDurationLabel = _formatOverdueDuration(
+                          l10n,
+                          overdue.overdueBy,
+                        );
+                        final overdueDetail =
+                            overdue.activity.scheduledTime.isNotEmpty
+                            ? l10n.doctorActivityLatestWithTime(
+                                overdue.activity.title,
+                                overdue.activity.scheduledTime,
+                              )
+                            : overdue.activity.title;
+
+                        return _alertDetailBlock(
+                          context,
+                          icon: Icons.notifications_active_outlined,
+                          iconColor: const Color(0xFFEA580C),
+                          iconBg: AppColorPalette.gold.withValues(alpha: 0.45),
+                          title: l10n.doctorAlertActivityReminder,
+                          detail: overdueDetail,
+                          meta: l10n.doctorActivityOverdueBy(
+                            overdueDurationLabel,
+                          ),
+                          metaColor: const Color(0xFFEA580C),
+                        );
+                      },
                     ),
                   ],
                 ),
@@ -531,47 +1057,75 @@ class DoctorPatientCareDashboardPage extends StatelessWidget {
                         ),
                         borderRadius: BorderRadius.circular(12),
                       ),
-                      child: Row(
-                        children: [
-                          Icon(
-                            Icons.medication_rounded,
-                            color: AppColorPalette.blueSteel,
-                            size: 28,
-                          ),
-                          const SizedBox(
-                            width: Dimensions.verticalSpacingRegular,
-                          ),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  l10n.doctorNextDoseLabel,
-                                  style: theme.textTheme.bodySmall?.copyWith(
-                                    color: AppColorPalette.grey,
-                                    fontWeight: FontWeight.w600,
-                                  ),
+                      child: StreamBuilder<List<MedicineItem>>(
+                        stream: medicineDocId.isEmpty
+                            ? const Stream<List<MedicineItem>>.empty()
+                            : MedicineService.watchMedicines(medicineDocId),
+                        builder: (context, medicinesSnap) {
+                          final medicines =
+                              medicinesSnap.data ?? const <MedicineItem>[];
+                          final nextDose = _nextDoseInfo(medicines);
+                          final hasDose = nextDose != null;
+                          final doseTime = hasDose
+                              ? _formatDoseTime(context, nextDose)
+                              : '';
+                          final doseLine = hasDose
+                              ? '${nextDose.medicine.name} - $doseTime'
+                              : l10n.doctorMedNoMedicationYet;
+                          final trailing = hasDose
+                              ? (nextDose.nextAt != null
+                                    ? l10n.doctorMedNextAt(doseTime)
+                                    : nextDose.medicine.frequency)
+                              : '--';
+
+                          return Row(
+                            children: [
+                              Icon(
+                                Icons.medication_rounded,
+                                color: AppColorPalette.blueSteel,
+                                size: 28,
+                              ),
+                              const SizedBox(
+                                width: Dimensions.verticalSpacingRegular,
+                              ),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      l10n.doctorNextDoseLabel,
+                                      style: theme.textTheme.bodySmall
+                                          ?.copyWith(
+                                            color: AppColorPalette.grey,
+                                            fontWeight: FontWeight.w600,
+                                          ),
+                                    ),
+                                    const SizedBox(
+                                      height:
+                                          Dimensions.verticalSpacingExtraShort,
+                                    ),
+                                    Text(
+                                      doseLine,
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: theme.textTheme.titleSmall
+                                          ?.copyWith(
+                                            fontWeight: FontWeight.w800,
+                                          ),
+                                    ),
+                                  ],
                                 ),
-                                const SizedBox(
-                                  height: Dimensions.verticalSpacingExtraShort,
+                              ),
+                              Text(
+                                trailing,
+                                style: theme.textTheme.titleSmall?.copyWith(
+                                  color: AppColorPalette.blueSteel,
+                                  fontWeight: FontWeight.w800,
                                 ),
-                                Text(
-                                  l10n.doctorNextDoseSchedule,
-                                  style: theme.textTheme.titleSmall?.copyWith(
-                                    fontWeight: FontWeight.w800,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                          Text(
-                            l10n.doctorNextDoseIn,
-                            style: theme.textTheme.titleSmall?.copyWith(
-                              color: AppColorPalette.blueSteel,
-                              fontWeight: FontWeight.w800,
-                            ),
-                          ),
-                        ],
+                              ),
+                            ],
+                          );
+                        },
                       ),
                     ),
                     const SizedBox(height: Dimensions.verticalSpacingRegular),
@@ -601,96 +1155,133 @@ class DoctorPatientCareDashboardPage extends StatelessWidget {
               ),
               const SizedBox(height: Dimensions.verticalSpacingRegular),
               _doctorSolidCard(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          l10n.doctorActivitiesTitle,
-                          style: theme.textTheme.titleMedium?.copyWith(
-                            fontWeight: FontWeight.w800,
-                          ),
-                        ),
-                        Text(
-                          l10n.doctorActivitiesCompletedCount(3),
-                          style: theme.textTheme.titleSmall?.copyWith(
-                            color: AppColorPalette.emerald,
-                            fontWeight: FontWeight.w800,
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: Dimensions.verticalSpacingShort),
-                    Row(
+                child: StreamBuilder<List<ActivityItem>>(
+                  stream: activityDocId.isEmpty
+                      ? const Stream<List<ActivityItem>>.empty()
+                      : ActivityService.watchActivities(activityDocId),
+                  builder: (context, activitiesSnap) {
+                    final activities =
+                        activitiesSnap.data ?? const <ActivityItem>[];
+                    final completedCount = activities
+                        .where((a) => a.isCompleted)
+                        .length;
+                    final latest = activities.isNotEmpty
+                        ? activities.first
+                        : null;
+                    final progressLine = latest == null
+                        ? l10n.doctorActivityNoActivitiesYet
+                        : (latest.scheduledTime.isNotEmpty
+                              ? l10n.doctorActivityLatestWithTime(
+                                  latest.title,
+                                  latest.scheduledTime,
+                                )
+                              : latest.title);
+
+                    return Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Container(
-                          width: 40,
-                          height: 40,
-                          decoration: BoxDecoration(
-                            color: AppColorPalette.mint.withValues(alpha: 0.85),
-                            shape: BoxShape.circle,
-                          ),
-                          child: const Icon(
-                            Icons.check_rounded,
-                            color: AppColorPalette.emerald,
-                            size: 24,
-                          ),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(
+                              l10n.doctorActivitiesTitle,
+                              style: theme.textTheme.titleMedium?.copyWith(
+                                fontWeight: FontWeight.w800,
+                              ),
+                            ),
+                            Text(
+                              l10n.doctorActivitiesCompletedCount(
+                                completedCount,
+                              ),
+                              style: theme.textTheme.titleSmall?.copyWith(
+                                color: AppColorPalette.emerald,
+                                fontWeight: FontWeight.w800,
+                              ),
+                            ),
+                          ],
                         ),
-                        const SizedBox(width: Dimensions.verticalSpacingShort),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                l10n.doctorTodaysProgressLabel,
-                                style: theme.textTheme.bodySmall?.copyWith(
-                                  color: AppColorPalette.grey,
-                                  fontWeight: FontWeight.w600,
+                        const SizedBox(height: Dimensions.verticalSpacingShort),
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Container(
+                              width: 40,
+                              height: 40,
+                              decoration: BoxDecoration(
+                                color: AppColorPalette.mint.withValues(
+                                  alpha: 0.85,
+                                ),
+                                shape: BoxShape.circle,
+                              ),
+                              child: const Icon(
+                                Icons.check_rounded,
+                                color: AppColorPalette.emerald,
+                                size: 24,
+                              ),
+                            ),
+                            const SizedBox(
+                              width: Dimensions.verticalSpacingShort,
+                            ),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    l10n.doctorTodaysProgressLabel,
+                                    style: theme.textTheme.bodySmall?.copyWith(
+                                      color: AppColorPalette.grey,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                  const SizedBox(
+                                    height:
+                                        Dimensions.verticalSpacingExtraShort,
+                                  ),
+                                  Text(
+                                    progressLine,
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: theme.textTheme.titleSmall?.copyWith(
+                                      fontWeight: FontWeight.w800,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(
+                          height: Dimensions.verticalSpacingRegular,
+                        ),
+                        SizedBox(
+                          width: double.infinity,
+                          child: FilledButton.icon(
+                            onPressed: onOpenActivityTab,
+                            icon: const Icon(
+                              Icons.calendar_month_rounded,
+                              size: 22,
+                            ),
+                            label: Text(
+                              l10n.doctorAssignActivity,
+                              style: const TextStyle(
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                            style: FilledButton.styleFrom(
+                              backgroundColor: AppColorPalette.blueSteel,
+                              foregroundColor: Colors.white,
+                              padding: const EdgeInsets.symmetric(vertical: 12),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(
+                                  containerRadius,
                                 ),
                               ),
-                              const SizedBox(
-                                height: Dimensions.verticalSpacingExtraShort,
-                              ),
-                              Text(
-                                l10n.doctorTodaysProgressDone,
-                                style: theme.textTheme.titleSmall?.copyWith(
-                                  fontWeight: FontWeight.w800,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: Dimensions.verticalSpacingRegular),
-                    SizedBox(
-                      width: double.infinity,
-                      child: FilledButton.icon(
-                        onPressed: () {},
-                        icon: const Icon(
-                          Icons.calendar_month_rounded,
-                          size: 22,
-                        ),
-                        label: Text(
-                          l10n.doctorAssignActivity,
-                          style: const TextStyle(fontWeight: FontWeight.w700),
-                        ),
-                        style: FilledButton.styleFrom(
-                          backgroundColor: AppColorPalette.blueSteel,
-                          foregroundColor: Colors.white,
-                          padding: const EdgeInsets.symmetric(vertical: 12),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(
-                              containerRadius,
                             ),
                           ),
                         ),
-                      ),
-                    ),
-                  ],
+                      ],
+                    );
+                  },
                 ),
               ),
               const SizedBox(height: Dimensions.verticalSpacingRegular),
@@ -720,7 +1311,8 @@ class DoctorPatientCareDashboardPage extends StatelessWidget {
                               final member = i < members.length
                                   ? members[i]
                                   : null;
-                              final memberImageUrl = member?.imageUrl.trim() ?? '';
+                              final memberImageUrl =
+                                  member?.imageUrl.trim() ?? '';
                               final showImage = memberImageUrl.isNotEmpty;
                               return PositionedDirectional(
                                 start: i * 28,
@@ -836,6 +1428,8 @@ class DoctorPatientCareDashboardPage extends StatelessWidget {
     required String detail,
     required String meta,
     required Color metaColor,
+    String? actionLabel,
+    VoidCallback? onActionTap,
   }) {
     final theme = Theme.of(context);
     return Row(
@@ -874,6 +1468,25 @@ class DoctorPatientCareDashboardPage extends StatelessWidget {
                   fontWeight: FontWeight.w700,
                 ),
               ),
+              if (actionLabel != null && onActionTap != null) ...[
+                const SizedBox(height: Dimensions.verticalSpacingExtraShort),
+                TextButton(
+                  onPressed: onActionTap,
+                  style: TextButton.styleFrom(
+                    padding: EdgeInsets.zero,
+                    minimumSize: Size.zero,
+                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                    foregroundColor: AppColorPalette.blueSteel,
+                  ),
+                  child: Text(
+                    actionLabel,
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: AppColorPalette.blueSteel,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                ),
+              ],
             ],
           ),
         ),
@@ -904,6 +1517,37 @@ class DoctorPatientCareDashboardPage extends StatelessWidget {
       ),
     );
   }
+}
+
+class _NextDoseInfo {
+  const _NextDoseInfo({
+    required this.medicine,
+    required this.nextAt,
+    required this.rawTime,
+  });
+
+  final MedicineItem medicine;
+  final DateTime? nextAt;
+  final String rawTime;
+}
+
+class _OverdueActivityInfo {
+  const _OverdueActivityInfo({required this.activity, required this.overdueBy});
+
+  final ActivityItem activity;
+  final Duration overdueBy;
+}
+
+class _OverdueMedicationInfo {
+  const _OverdueMedicationInfo({
+    required this.medicine,
+    required this.overdueBy,
+    required this.scheduledTime,
+  });
+
+  final MedicineItem medicine;
+  final Duration overdueBy;
+  final String scheduledTime;
 }
 
 class _DoctorDashBorderPainter extends CustomPainter {

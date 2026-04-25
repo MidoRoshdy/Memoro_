@@ -599,6 +599,12 @@ abstract class AppLocalizations {
   /// **'Games'**
   String get tabGames;
 
+  /// No description provided for @tabActivity.
+  ///
+  /// In en, this message translates to:
+  /// **'Activity'**
+  String get tabActivity;
+
   /// No description provided for @tabMedicine.
   ///
   /// In en, this message translates to:
@@ -850,6 +856,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Solve simple math as fast as you can.'**
   String get gameMathSubtitle;
+
+  /// No description provided for @patientActivitySectionTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Activities'**
+  String get patientActivitySectionTitle;
 
   /// No description provided for @restartTooltip.
   ///
@@ -1877,6 +1889,18 @@ abstract class AppLocalizations {
   /// **'This week\'s overall wellness score.'**
   String get doctorWellnessScoreLine;
 
+  /// No description provided for @doctorProgressNoItemsYet.
+  ///
+  /// In en, this message translates to:
+  /// **'No medicines or activities assigned yet.'**
+  String get doctorProgressNoItemsYet;
+
+  /// No description provided for @doctorProgressSummary.
+  ///
+  /// In en, this message translates to:
+  /// **'{done} of {total} medicines and activities completed.'**
+  String doctorProgressSummary(Object done, Object total);
+
   /// No description provided for @doctorWellnessPercent.
   ///
   /// In en, this message translates to:
@@ -2002,6 +2026,366 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Assign Activity'**
   String get doctorAssignActivity;
+
+  /// No description provided for @doctorActivityNoActivitiesYet.
+  ///
+  /// In en, this message translates to:
+  /// **'No activities assigned yet.'**
+  String get doctorActivityNoActivitiesYet;
+
+  /// No description provided for @doctorActivityTitleRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Activity title is required.'**
+  String get doctorActivityTitleRequired;
+
+  /// No description provided for @doctorActivityTitleLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Activity title'**
+  String get doctorActivityTitleLabel;
+
+  /// No description provided for @doctorActivityTitleHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Drink water / Morning walk / Stretching'**
+  String get doctorActivityTitleHint;
+
+  /// No description provided for @doctorActivityTypeLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Activity type'**
+  String get doctorActivityTypeLabel;
+
+  /// No description provided for @doctorActivityTypeWater.
+  ///
+  /// In en, this message translates to:
+  /// **'Water'**
+  String get doctorActivityTypeWater;
+
+  /// No description provided for @doctorActivityTypeExercise.
+  ///
+  /// In en, this message translates to:
+  /// **'Exercise'**
+  String get doctorActivityTypeExercise;
+
+  /// No description provided for @doctorActivityTypeBreathing.
+  ///
+  /// In en, this message translates to:
+  /// **'Breathing'**
+  String get doctorActivityTypeBreathing;
+
+  /// No description provided for @doctorActivityTypeOther.
+  ///
+  /// In en, this message translates to:
+  /// **'Other'**
+  String get doctorActivityTypeOther;
+
+  /// No description provided for @doctorActivityTargetLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Target'**
+  String get doctorActivityTargetLabel;
+
+  /// No description provided for @doctorActivityTargetHint.
+  ///
+  /// In en, this message translates to:
+  /// **'8 glasses / 20 mins / 1 session'**
+  String get doctorActivityTargetHint;
+
+  /// No description provided for @doctorActivityTimeLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Time: {time}'**
+  String doctorActivityTimeLabel(Object time);
+
+  /// No description provided for @doctorActivityInstructionsLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Instructions'**
+  String get doctorActivityInstructionsLabel;
+
+  /// No description provided for @doctorActivityInstructionsHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Any extra details for the patient...'**
+  String get doctorActivityInstructionsHint;
+
+  /// No description provided for @doctorActivityDoneButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Done'**
+  String get doctorActivityDoneButton;
+
+  /// No description provided for @doctorActivityLatestWithTime.
+  ///
+  /// In en, this message translates to:
+  /// **'{title} at {time}'**
+  String doctorActivityLatestWithTime(Object title, Object time);
+
+  /// No description provided for @doctorActivityNoMissedNow.
+  ///
+  /// In en, this message translates to:
+  /// **'No missed activities right now.'**
+  String get doctorActivityNoMissedNow;
+
+  /// No description provided for @doctorActivityOverdueBy.
+  ///
+  /// In en, this message translates to:
+  /// **'Overdue by {duration}'**
+  String doctorActivityOverdueBy(Object duration);
+
+  /// No description provided for @doctorActivityDurationHoursMinutes.
+  ///
+  /// In en, this message translates to:
+  /// **'{hours}h {minutes}m'**
+  String doctorActivityDurationHoursMinutes(Object hours, Object minutes);
+
+  /// No description provided for @doctorActivityDurationMinutes.
+  ///
+  /// In en, this message translates to:
+  /// **'{minutes}m'**
+  String doctorActivityDurationMinutes(Object minutes);
+
+  /// No description provided for @doctorActivityTotal.
+  ///
+  /// In en, this message translates to:
+  /// **'Total Activities'**
+  String get doctorActivityTotal;
+
+  /// No description provided for @doctorActivityTakenToday.
+  ///
+  /// In en, this message translates to:
+  /// **'Taken Today'**
+  String get doctorActivityTakenToday;
+
+  /// No description provided for @doctorActivityMissed.
+  ///
+  /// In en, this message translates to:
+  /// **'Missed'**
+  String get doctorActivityMissed;
+
+  /// No description provided for @doctorActivityWeeklyProgress.
+  ///
+  /// In en, this message translates to:
+  /// **'Weekly Progress'**
+  String get doctorActivityWeeklyProgress;
+
+  /// No description provided for @doctorActivityWeeklySubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Activities completed this week. You\'re on track for the target.'**
+  String get doctorActivityWeeklySubtitle;
+
+  /// No description provided for @doctorActivityRecentResultTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Recent Result'**
+  String get doctorActivityRecentResultTitle;
+
+  /// No description provided for @doctorActivityRecentResultSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'High accuracy achieved today'**
+  String get doctorActivityRecentResultSubtitle;
+
+  /// No description provided for @doctorActivityAssignDetails.
+  ///
+  /// In en, this message translates to:
+  /// **'Assign Details'**
+  String get doctorActivityAssignDetails;
+
+  /// No description provided for @doctorActivityFinishedOnTime.
+  ///
+  /// In en, this message translates to:
+  /// **'Finished on time'**
+  String get doctorActivityFinishedOnTime;
+
+  /// No description provided for @doctorActivityScoreLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Score'**
+  String get doctorActivityScoreLabel;
+
+  /// No description provided for @doctorActivityLevel.
+  ///
+  /// In en, this message translates to:
+  /// **'Level'**
+  String get doctorActivityLevel;
+
+  /// No description provided for @doctorActivityAssignedDate.
+  ///
+  /// In en, this message translates to:
+  /// **'Assigned Date'**
+  String get doctorActivityAssignedDate;
+
+  /// No description provided for @doctorActivityScheduledTime.
+  ///
+  /// In en, this message translates to:
+  /// **'Scheduled Time'**
+  String get doctorActivityScheduledTime;
+
+  /// No description provided for @doctorActivityDuration.
+  ///
+  /// In en, this message translates to:
+  /// **'Duration'**
+  String get doctorActivityDuration;
+
+  /// No description provided for @doctorActivityMinutesUnit.
+  ///
+  /// In en, this message translates to:
+  /// **'minutes'**
+  String get doctorActivityMinutesUnit;
+
+  /// No description provided for @doctorActivityAssignedBy.
+  ///
+  /// In en, this message translates to:
+  /// **'Assigned By'**
+  String get doctorActivityAssignedBy;
+
+  /// No description provided for @doctorActivityPerformanceSummary.
+  ///
+  /// In en, this message translates to:
+  /// **'Performance Summary'**
+  String get doctorActivityPerformanceSummary;
+
+  /// No description provided for @doctorActivityFinalScore.
+  ///
+  /// In en, this message translates to:
+  /// **'Final Score'**
+  String get doctorActivityFinalScore;
+
+  /// No description provided for @doctorActivityTimeTaken.
+  ///
+  /// In en, this message translates to:
+  /// **'Time Taken'**
+  String get doctorActivityTimeTaken;
+
+  /// No description provided for @doctorActivityCorrectMatches.
+  ///
+  /// In en, this message translates to:
+  /// **'Correct Matches'**
+  String get doctorActivityCorrectMatches;
+
+  /// No description provided for @doctorActivityTotalAttempts.
+  ///
+  /// In en, this message translates to:
+  /// **'Total Attempts'**
+  String get doctorActivityTotalAttempts;
+
+  /// No description provided for @doctorActivityVisibleForPatient.
+  ///
+  /// In en, this message translates to:
+  /// **'Visible for patient'**
+  String get doctorActivityVisibleForPatient;
+
+  /// No description provided for @doctorActivityEditActivity.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit Activity'**
+  String get doctorActivityEditActivity;
+
+  /// No description provided for @doctorActivityCancelActivity.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancel Activity'**
+  String get doctorActivityCancelActivity;
+
+  /// No description provided for @doctorActivityStatusCancelled.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancelled'**
+  String get doctorActivityStatusCancelled;
+
+  /// No description provided for @doctorActivityAssignedGames.
+  ///
+  /// In en, this message translates to:
+  /// **'Assigned Games'**
+  String get doctorActivityAssignedGames;
+
+  /// No description provided for @doctorGamesShowMemory.
+  ///
+  /// In en, this message translates to:
+  /// **'Show memory games'**
+  String get doctorGamesShowMemory;
+
+  /// No description provided for @doctorGamesShowOnline.
+  ///
+  /// In en, this message translates to:
+  /// **'Show online games'**
+  String get doctorGamesShowOnline;
+
+  /// No description provided for @doctorGamesShowSudoku.
+  ///
+  /// In en, this message translates to:
+  /// **'Show Sudoku'**
+  String get doctorGamesShowSudoku;
+
+  /// No description provided for @doctorGamesShowSimon.
+  ///
+  /// In en, this message translates to:
+  /// **'Show Simon Says'**
+  String get doctorGamesShowSimon;
+
+  /// No description provided for @doctorGamesTitleLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Game title'**
+  String get doctorGamesTitleLabel;
+
+  /// No description provided for @doctorGamesTitleHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Puzzle 2048'**
+  String get doctorGamesTitleHint;
+
+  /// No description provided for @doctorGamesUrlLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Game URL'**
+  String get doctorGamesUrlLabel;
+
+  /// No description provided for @doctorGamesUrlHint.
+  ///
+  /// In en, this message translates to:
+  /// **'https://...'**
+  String get doctorGamesUrlHint;
+
+  /// No description provided for @doctorGamesAddLink.
+  ///
+  /// In en, this message translates to:
+  /// **'Add game link'**
+  String get doctorGamesAddLink;
+
+  /// No description provided for @doctorGamesRequiredFields.
+  ///
+  /// In en, this message translates to:
+  /// **'Please fill game title and URL.'**
+  String get doctorGamesRequiredFields;
+
+  /// No description provided for @doctorGamesNoCustomLinks.
+  ///
+  /// In en, this message translates to:
+  /// **'No custom links yet.'**
+  String get doctorGamesNoCustomLinks;
+
+  /// No description provided for @doctorGamesLinkAdded.
+  ///
+  /// In en, this message translates to:
+  /// **'Game link added.'**
+  String get doctorGamesLinkAdded;
+
+  /// No description provided for @doctorGamesHide.
+  ///
+  /// In en, this message translates to:
+  /// **'Hide'**
+  String get doctorGamesHide;
+
+  /// No description provided for @doctorGamesShow.
+  ///
+  /// In en, this message translates to:
+  /// **'Show'**
+  String get doctorGamesShow;
 
   /// No description provided for @doctorFamilyMembersTitle.
   ///
@@ -2176,6 +2560,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'No medications yet.'**
   String get doctorMedNoMedicationYet;
+
+  /// No description provided for @doctorMedNoMissedNow.
+  ///
+  /// In en, this message translates to:
+  /// **'No missed medications right now.'**
+  String get doctorMedNoMissedNow;
+
+  /// No description provided for @doctorMedLatestWithTime.
+  ///
+  /// In en, this message translates to:
+  /// **'{title} at {time}'**
+  String doctorMedLatestWithTime(Object title, Object time);
 
   /// No description provided for @doctorMedAllMedications.
   ///

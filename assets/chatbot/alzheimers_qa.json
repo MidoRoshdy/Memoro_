@@ -71,6 +71,78 @@
       "questionAr": "هل يمكن أن تتغير الأعراض من يوم لآخر؟",
       "answerEn": "Yes. Symptoms can vary with sleep quality, stress, illness, and environment. Keeping routines often helps.",
       "answerAr": "نعم. قد تختلف الأعراض حسب النوم والتوتر والمرض والبيئة. الحفاظ على الروتين غالبا يساعد."
+    },
+    {
+      "questionEn": "Did I take my medicine or not?",
+      "questionAr": "أخدت الدوا بتاعي ولا لأ؟",
+      "answerEn": "According to your schedule, your medicine time is [time]. Would you like me to remind you to take it now?",
+      "answerAr": "حسب الجدول، المفروض تكون أخدت الدوا الساعة [الوقت]. تحب أفكرك تاخده دلوقتي؟"
+    },
+    {
+      "questionEn": "Do I have an appointment today?",
+      "questionAr": "عندي ميعاد النهارده؟",
+      "answerEn": "Yes, you have an appointment at [time] with [doctor/person] at [place].",
+      "answerAr": "أيوه، عندك ميعاد الساعة [الوقت] مع [اسم الشخص/الدكتور] في مكان [المكان]."
+    },
+    {
+      "questionEn": "I am lost and I do not know what to do.",
+      "questionAr": "أنا تايه ومش عارف أعمل إيه",
+      "answerEn": "It is okay, I am with you. Please stay where you are and press the emergency call button. Your family will reach you soon.",
+      "answerAr": "مفيش مشكلة، أنا معاك. حاول تفضل في مكانك واضغط على المكالمة الطارئة، وهيجيلك حد من عائلتك."
+    },
+    {
+      "questionEn": "What was I going to do now?",
+      "questionAr": "أنا كنت هعمل إيه دلوقتي؟",
+      "answerEn": "You were planning to do [activity]. Would you like me to help you continue it?",
+      "answerAr": "كنت ناوي [النشاط]. تحب أساعدك تكمله؟"
+    },
+    {
+      "questionEn": "I feel anxious and confused.",
+      "questionAr": "أنا قلقان ومش فاهم اللي بيحصل",
+      "answerEn": "This feeling is normal. Stay calm and we can go step by step. Do you want me to help you contact your family?",
+      "answerAr": "ده شعور طبيعي، خليك هادي وأنا معاك خطوة بخطوة. تحب أساعدك تتواصل مع حد من أهلك؟"
+    },
+    {
+      "questionEn": "What happened yesterday?",
+      "questionAr": "حصل إيه امبارح؟",
+      "answerEn": "Yesterday you had a nice day. [Simple activity summary: visited someone / went out / rested at home].",
+      "answerAr": "امبارح قضيت وقت لطيف، [وصف بسيط للنشاط: زرت حد / خرجت / ارتحت في البيت]."
+    },
+    {
+      "questionEn": "What should I do right now?",
+      "questionAr": "أعمل إيه دلوقتي؟",
+      "answerEn": "Now it is time for [activity: rest / meal / medicine / light walk].",
+      "answerAr": "دلوقتي وقت [نشاط: راحة / أكل / دوا / مشي خفيف]."
+    },
+    {
+      "questionEn": "What is my name?",
+      "questionAr": "أنا اسمي إيه؟",
+      "answerEn": "Your name is [name].",
+      "answerAr": "اسمك [الاسم]."
+    },
+    {
+      "questionEn": "What is today's date?",
+      "questionAr": "النهارده كام؟",
+      "answerEn": "Today is [date].",
+      "answerAr": "النهارده [التاريخ]."
+    },
+    {
+      "questionEn": "Where am I?",
+      "questionAr": "أنا فين؟",
+      "answerEn": "You are in [place].",
+      "answerAr": "إنت في [المكان]."
+    },
+    {
+      "questionEn": "Which medicines do I need to take?",
+      "questionAr": "أنا عليا أدوية إيه؟",
+      "answerEn": "You need to take [medicine list], such as Vitamin B12.",
+      "answerAr": "عليك أدوية [قائمة الأدوية]، مثل فيتامين B12."
+    },
+    {
+      "questionEn": "Which activities do I have now?",
+      "questionAr": "إيه الأنشطة اللي عليا دلوقت؟",
+      "answerEn": "Right now, your tasks are [activities], for example reading a short book.",
+      "answerAr": "دلوقت عليك [الأنشطة]، مثلا قراءة كتاب قصير."
     }
   ]
 }

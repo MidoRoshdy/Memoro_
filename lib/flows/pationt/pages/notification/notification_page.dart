@@ -1,38 +1,24 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/constants/dimensions.dart';
 import '../../../../core/constants/string_assets.dart';
+import '../../../../core/models/app_notification.dart';
+import '../../../../core/providers/notification_provider.dart';
+import '../../../../core/services/notification_route_resolver.dart';
 import '../../../../core/theme/app_color_palette.dart';
 import '../../../../l10n/app_localizations.dart';
 
-class NotificationPage extends StatefulWidget {
+class NotificationPage extends ConsumerStatefulWidget {
   const NotificationPage({super.key});
 
   @override
-  State<NotificationPage> createState() => _NotificationPageState();
+  ConsumerState<NotificationPage> createState() => _NotificationPageState();
 }
 
 enum _NotificationTab { today, reminders, earlier }
 
-class _NotificationEntry {
-  const _NotificationEntry({
-    required this.title,
-    required this.subtitle,
-    required this.time,
-    required this.icon,
-    required this.tab,
-    this.iconBg = const Color(0xFFE6F0FF),
-  });
-
-  final String title;
-  final String subtitle;
-  final String time;
-  final Widget icon;
-  final _NotificationTab tab;
-  final Color iconBg;
-}
-
-class _NotificationPageState extends State<NotificationPage> {
+class _NotificationPageState extends ConsumerState<NotificationPage> {
   _NotificationTab _selectedTab = _NotificationTab.today;
 
   Widget _topTab({required String title, required _NotificationTab tab}) {
@@ -62,57 +48,101 @@ class _NotificationPageState extends State<NotificationPage> {
     );
   }
 
-  Widget _notificationItem(_NotificationEntry item) {
-    return Container(
-      padding: appPadding,
-      decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.93),
-        borderRadius: BorderRadius.circular(Dimensions.verticalSpacingMedium),
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 50,
-            height: 50,
-            decoration: BoxDecoration(
-              color: item.iconBg,
-              borderRadius: BorderRadius.circular(14),
+  Widget _notificationItem(AppNotification item) {
+    final time = item.createdAt != null
+        ? MaterialLocalizations.of(
+            context,
+          ).formatTimeOfDay(TimeOfDay.fromDateTime(item.createdAt!.toLocal()))
+        : '--';
+    final icon = _iconForType(item.type);
+    final iconBg = _iconBgForType(item.type);
+
+    return InkWell(
+      onTap: () async {
+        final actions = ref.read(notificationActionsProvider);
+        await actions.markAsOpened(item.id);
+        await NotificationRouteResolver.openFromPayload(
+          _payloadFromNotification(item),
+        );
+      },
+      borderRadius: BorderRadius.circular(Dimensions.verticalSpacingMedium),
+      child: Container(
+        padding: appPadding,
+        decoration: BoxDecoration(
+          color: item.isRead
+              ? Colors.white.withValues(alpha: 0.87)
+              : Colors.white.withValues(alpha: 0.95),
+          borderRadius: BorderRadius.circular(Dimensions.verticalSpacingMedium),
+          border: item.isRead
+              ? null
+              : Border.all(
+                  color: AppColorPalette.blueSteel.withValues(alpha: 0.3),
+                ),
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 50,
+              height: 50,
+              decoration: BoxDecoration(
+                color: iconBg,
+                borderRadius: BorderRadius.circular(14),
+              ),
+              padding: const EdgeInsets.all(10),
+              child: icon,
             ),
-            padding: const EdgeInsets.all(10),
-            child: item.icon,
-          ),
-          const SizedBox(width: Dimensions.verticalSpacingRegular),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+            const SizedBox(width: Dimensions.verticalSpacingRegular),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    item.title,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                      fontWeight: FontWeight.w800,
+                      fontSize: 17,
+                    ),
+                  ),
+                  const SizedBox(height: Dimensions.verticalSpacingExtraShort),
+                  Text(
+                    item.body,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                      color: AppColorPalette.grey,
+                      fontSize: 14,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(width: Dimensions.horizontalSpacingShort),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.end,
               children: [
                 Text(
-                  item.title,
-                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                  time,
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    color: AppColorPalette.blueSteel,
                     fontWeight: FontWeight.w800,
-                    fontSize: 17,
                   ),
                 ),
-                const SizedBox(height: Dimensions.verticalSpacingExtraShort),
-                Text(
-                  item.subtitle,
-                  style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                    color: AppColorPalette.grey,
-                    fontSize: 14,
+                if (!item.isRead)
+                  Container(
+                    margin: const EdgeInsets.only(top: 6),
+                    width: 8,
+                    height: 8,
+                    decoration: const BoxDecoration(
+                      color: Colors.red,
+                      shape: BoxShape.circle,
+                    ),
                   ),
-                ),
               ],
             ),
-          ),
-          Text(
-            item.time,
-            style: Theme.of(context).textTheme.titleLarge?.copyWith(
-              color: AppColorPalette.blueSteel,
-              fontWeight: FontWeight.w900,
-              fontSize: 17,
-            ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -170,49 +200,90 @@ class _NotificationPageState extends State<NotificationPage> {
     );
   }
 
-  List<_NotificationEntry> _allEntries(AppLocalizations l10n) {
-    return [
-      _NotificationEntry(
-        title: l10n.notifTitleMedicationTime,
-        subtitle: l10n.notifDoseAt('2:00 PM'),
-        time: '2:00 PM',
-        icon: Image.asset(AppAssets.medcineicon, fit: BoxFit.contain),
-        tab: _NotificationTab.today,
-      ),
-      _NotificationEntry(
-        title: l10n.notifTitleMessageFromFamily,
-        subtitle: l10n.notifSubtitleFamilyPhoto,
-        time: '11:00 AM',
-        icon: const Icon(
-          Icons.favorite_border_rounded,
+  List<AppNotification> _entriesForTab(List<AppNotification> source) {
+    final now = DateTime.now();
+    return source.where((e) {
+      if (_selectedTab == _NotificationTab.reminders) {
+        return e.isReminder;
+      }
+      if (_selectedTab == _NotificationTab.today) {
+        final created = e.createdAt?.toLocal();
+        if (created == null) return false;
+        return created.year == now.year &&
+            created.month == now.month &&
+            created.day == now.day &&
+            !e.isReminder;
+      }
+      return !e.isReminder;
+    }).toList();
+  }
+
+  Widget _iconForType(AppNotificationType type) {
+    switch (type) {
+      case AppNotificationType.medicationReminder:
+        return Image.asset(AppAssets.medcineicon, fit: BoxFit.contain);
+      case AppNotificationType.helpRequest:
+        return const Icon(
+          Icons.warning_amber_rounded,
           color: AppColorPalette.redDark,
-        ),
-        iconBg: const Color(0xFFFFF1F3),
-        tab: _NotificationTab.earlier,
-      ),
-      _NotificationEntry(
-        title: l10n.notifTitleMedicationTime,
-        subtitle: l10n.notifDoseAt('6:00 PM'),
-        time: '6:00 PM',
-        icon: Image.asset(AppAssets.medcineicon, fit: BoxFit.contain),
-        tab: _NotificationTab.reminders,
-      ),
-      _NotificationEntry(
-        title: l10n.notifTitleMedicationTime,
-        subtitle: l10n.notifDoseAt('8:00 PM'),
-        time: '8:00 PM',
-        icon: Image.asset(AppAssets.medcineicon, fit: BoxFit.contain),
-        tab: _NotificationTab.reminders,
-      ),
-    ];
+        );
+      case AppNotificationType.activityAssigned:
+      case AppNotificationType.activityDone:
+      case AppNotificationType.activityReminder:
+        return const Icon(
+          Icons.checklist_rounded,
+          color: AppColorPalette.blueSteel,
+        );
+      case AppNotificationType.general:
+        return const Icon(
+          Icons.notifications_active_outlined,
+          color: AppColorPalette.blueSteel,
+        );
+    }
+  }
+
+  Color _iconBgForType(AppNotificationType type) {
+    switch (type) {
+      case AppNotificationType.helpRequest:
+        return const Color(0xFFFFF1F3);
+      case AppNotificationType.medicationReminder:
+        return const Color(0xFFE6F0FF);
+      default:
+        return const Color(0xFFEAF7FF);
+    }
+  }
+
+  Map<String, dynamic> _payloadFromNotification(AppNotification item) {
+    return <String, dynamic>{
+      'type': _typeValue(item.type),
+      'pairId': item.pairId,
+      'entityId': item.entityId,
+      'data': item.data,
+    };
+  }
+
+  String _typeValue(AppNotificationType type) {
+    switch (type) {
+      case AppNotificationType.activityAssigned:
+        return 'activity_assigned';
+      case AppNotificationType.activityDone:
+        return 'activity_done';
+      case AppNotificationType.helpRequest:
+        return 'help_request';
+      case AppNotificationType.medicationReminder:
+        return 'medication_reminder';
+      case AppNotificationType.activityReminder:
+        return 'activity_reminder';
+      case AppNotificationType.general:
+        return 'general';
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
-    final visibleEntries = _allEntries(
-      l10n,
-    ).where((e) => e.tab == _selectedTab).toList();
+    final notifications = ref.watch(notificationsInboxProvider);
+    final actions = ref.read(notificationActionsProvider);
 
     return Scaffold(
       body: SafeArea(
@@ -244,7 +315,7 @@ class _NotificationPageState extends State<NotificationPage> {
                     ),
                   ),
                   TextButton(
-                    onPressed: () {},
+                    onPressed: () async => actions.clearAll(),
                     child: Text(
                       l10n.notifClearAll,
                       style: Theme.of(context).textTheme.titleLarge?.copyWith(
@@ -275,19 +346,42 @@ class _NotificationPageState extends State<NotificationPage> {
               ),
               const SizedBox(height: Dimensions.verticalSpacingRegular),
               Expanded(
-                child: ListView(
-                  padding: EdgeInsets.zero,
-                  children: [
-                    for (var i = 0; i < visibleEntries.length; i++) ...[
-                      _notificationItem(visibleEntries[i]),
-                      if (i != visibleEntries.length - 1)
+                child: notifications.when(
+                  data: (items) {
+                    final visibleEntries = _entriesForTab(items);
+                    if (visibleEntries.isEmpty) {
+                      return ListView(
+                        padding: EdgeInsets.zero,
+                        children: [_motivationCard()],
+                      );
+                    }
+                    return ListView(
+                      padding: EdgeInsets.zero,
+                      children: [
+                        for (var i = 0; i < visibleEntries.length; i++) ...[
+                          _notificationItem(visibleEntries[i]),
+                          if (i != visibleEntries.length - 1)
+                            const SizedBox(
+                              height: Dimensions.verticalSpacingRegular,
+                            ),
+                        ],
                         const SizedBox(
                           height: Dimensions.verticalSpacingRegular,
                         ),
-                    ],
-                    const SizedBox(height: Dimensions.verticalSpacingRegular),
-                    _motivationCard(),
-                  ],
+                        _motivationCard(),
+                      ],
+                    );
+                  },
+                  loading: () =>
+                      const Center(child: CircularProgressIndicator()),
+                  error: (_, _) => Center(
+                    child: Text(
+                      'Failed to load notifications',
+                      style: Theme.of(
+                        context,
+                      ).textTheme.bodyLarge?.copyWith(color: Colors.white),
+                    ),
+                  ),
                 ),
               ),
             ],

@@ -1,14 +1,19 @@
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/constants/dimensions.dart';
+import '../../../../core/models/activity_item.dart';
+import '../../../../core/models/medicine_item.dart';
 import '../../../../core/models/patient_public_profile.dart';
 import '../../../../core/providers/doctor_link_ui_provider.dart';
 import '../../../../core/providers/user_profile_provider.dart';
 import '../../../../core/router/app_router.dart';
+import '../../../../core/services/activity_service.dart';
 import '../../../../core/services/auth_service.dart';
 import '../../../../core/services/doctor_link_request_service.dart';
+import '../../../../core/services/medicine_service.dart';
 import '../../../../core/theme/app_color_palette.dart';
 import '../../../../l10n/app_localizations.dart';
 import '../../../pationt/widgets/language_picker_sheet.dart';
@@ -28,14 +33,16 @@ class DoctorProfileTabPage extends ConsumerWidget {
     final linkAsync = ref.watch(doctorLinkUiStateProvider);
 
     final user = authAsync.asData?.value;
+    final doctorUid = user?.uid.trim() ?? '';
     final displayName = _resolveDisplayName(l10n, user);
     final photoUrl = user?.photoURL?.trim() ?? '';
 
     final linkState =
         linkAsync.asData?.value ??
         const DoctorLinkStreamState(phase: DoctorLinkUiPhase.connect);
+    final linkedProfile = _linkedPatientProfile(linkState);
+    final linkedPatientUid = linkedProfile?.uid.trim() ?? '';
     final linkedPatientLabel = _linkedPatientLabel(l10n, linkState);
-    const managedTaskCount = 0;
 
     return SafeArea(
       child: Padding(
@@ -182,33 +189,30 @@ class DoctorProfileTabPage extends ConsumerWidget {
                 iconBg: AppColorPalette.blueSteel,
                 title: l10n.doctorProfileLinkedPatientTitle,
                 subtitle: linkedPatientLabel,
-                onTap: () => onBackToHome?.call(),
+                onTap: () {
+                  if (linkedProfile == null || linkedPatientUid.isEmpty) return;
+                  Navigator.of(context).push(
+                    MaterialPageRoute<void>(
+                      builder: (_) => _LinkedPatientProfilePage(
+                        patientUid: linkedPatientUid,
+                        fallbackProfile: linkedProfile,
+                      ),
+                    ),
+                  );
+                },
                 trailing: const Icon(
                   Icons.chevron_right_rounded,
                   color: AppColorPalette.grey,
                 ),
               ),
               const SizedBox(height: Dimensions.verticalSpacingShort),
-              _infoCard(
+              _managedTasksCard(
                 context: context,
-                icon: Icon(
-                  Icons.checklist_rounded,
-                  size: 18,
-                  color: AppColorPalette.tealDark,
-                ),
-                iconBg: const Color(0xFFE4F8EA),
-                title: l10n.doctorProfileManagedTasksTitle,
-                subtitle: l10n.doctorProfileManagedTasksSubtitle(
-                  managedTaskCount,
-                ),
-                onTap: () => onBackToHome?.call(),
-                trailing: Text(
-                  '$managedTaskCount',
-                  style: theme.textTheme.titleMedium?.copyWith(
-                    color: AppColorPalette.emerald,
-                    fontWeight: FontWeight.w900,
-                  ),
-                ),
+                l10n: l10n,
+                theme: theme,
+                doctorUid: doctorUid,
+                patientUid: linkedPatientUid,
+                onTap: onBackToHome,
               ),
               const SizedBox(height: Dimensions.verticalSpacingRegular),
               Text(
@@ -335,6 +339,81 @@ class DoctorProfileTabPage extends ConsumerWidget {
     return n;
   }
 
+  static PatientPublicProfile? _linkedPatientProfile(DoctorLinkStreamState state) {
+    if (state.phase != DoctorLinkUiPhase.linked || state.requestData == null) {
+      return null;
+    }
+    return PatientPublicProfile.fromDoctorLinkRequest(state.requestData!);
+  }
+
+  static Widget _managedTasksCard({
+    required BuildContext context,
+    required AppLocalizations l10n,
+    required ThemeData theme,
+    required String doctorUid,
+    required String patientUid,
+    required VoidCallback? onTap,
+  }) {
+    final canLoad = doctorUid.isNotEmpty && patientUid.isNotEmpty;
+    if (!canLoad) {
+      return _infoCard(
+        context: context,
+        icon: Icon(
+          Icons.checklist_rounded,
+          size: 18,
+          color: AppColorPalette.tealDark,
+        ),
+        iconBg: const Color(0xFFE4F8EA),
+        title: l10n.doctorProfileManagedTasksTitle,
+        subtitle: l10n.doctorProfileManagedTasksSubtitle(0),
+        onTap: () => onTap?.call(),
+        trailing: Text(
+          '0',
+          style: theme.textTheme.titleMedium?.copyWith(
+            color: AppColorPalette.emerald,
+            fontWeight: FontWeight.w900,
+          ),
+        ),
+      );
+    }
+    final medicineDocId = MedicineService.buildMedicineDocId(doctorUid, patientUid);
+    final activityDocId = ActivityService.buildActivityDocId(doctorUid, patientUid);
+    return StreamBuilder<List<MedicineItem>>(
+      stream: MedicineService.watchMedicines(medicineDocId),
+      builder: (context, medSnap) {
+        final meds = medSnap.data ?? const <MedicineItem>[];
+        final medsActive = meds.where((m) => !m.isTaken).length;
+        return StreamBuilder<List<ActivityItem>>(
+          stream: ActivityService.watchActivities(activityDocId),
+          builder: (context, actSnap) {
+            final activities = actSnap.data ?? const <ActivityItem>[];
+            final actActive = activities.where((a) => !a.isCompleted && !a.isCancelled).length;
+            final managedTaskCount = medsActive + actActive;
+            return _infoCard(
+              context: context,
+              icon: Icon(
+                Icons.checklist_rounded,
+                size: 18,
+                color: AppColorPalette.tealDark,
+              ),
+              iconBg: const Color(0xFFE4F8EA),
+              title: l10n.doctorProfileManagedTasksTitle,
+              subtitle: l10n.doctorProfileManagedTasksSubtitle(managedTaskCount),
+              onTap: () => onTap?.call(),
+              trailing: Text(
+                '$managedTaskCount',
+                style: theme.textTheme.titleMedium?.copyWith(
+                  color: AppColorPalette.emerald,
+                  fontWeight: FontWeight.w900,
+                ),
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
   static Widget _infoCard({
     required BuildContext context,
     required Widget icon,
@@ -427,6 +506,150 @@ class DoctorProfileTabPage extends ConsumerWidget {
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+class _LinkedPatientProfilePage extends StatelessWidget {
+  const _LinkedPatientProfilePage({
+    required this.patientUid,
+    required this.fallbackProfile,
+  });
+
+  final String patientUid;
+  final PatientPublicProfile fallbackProfile;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    final patientRef = FirebaseFirestore.instance
+        .collection(AuthService.usersCollection)
+        .doc(AuthService.patientsHubDocId)
+        .collection(AuthService.patientUsersSubcollection)
+        .doc(patientUid);
+
+    return Scaffold(
+      appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        title: Text(l10n.doctorProfileLinkedPatientTitle),
+      ),
+      body: SafeArea(
+        child: Padding(
+          padding: appPadding,
+          child: StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
+            stream: patientRef.snapshots(),
+            builder: (context, snap) {
+              final fromDb = snap.hasData
+                  ? PatientPublicProfile.fromDocumentSnapshot(snap.data!)
+                  : null;
+              final profile = fromDb ?? fallbackProfile;
+              final imageUrl = profile.imageUrl.trim();
+              final name = profile.name.trim().isNotEmpty
+                  ? profile.name.trim()
+                  : l10n.profilePlaceholderUserName;
+              final age = profile.age != null ? '${profile.age}' : '—';
+              final gender = profile.gender.trim().isNotEmpty
+                  ? profile.gender.trim()
+                  : '—';
+              final patientId = profile.patientId.trim().isNotEmpty
+                  ? profile.patientId.trim()
+                  : '—';
+              final phone = profile.phone.trim().isNotEmpty
+                  ? profile.phone.trim()
+                  : '—';
+
+              return SingleChildScrollView(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    CircleAvatar(
+                      radius: 46,
+                      backgroundColor: Colors.white,
+                      backgroundImage: imageUrl.isNotEmpty ? NetworkImage(imageUrl) : null,
+                      child: imageUrl.isEmpty
+                          ? const Icon(
+                              Icons.person_rounded,
+                              size: 44,
+                              color: AppColorPalette.blueSteel,
+                            )
+                          : null,
+                    ),
+                    const SizedBox(height: Dimensions.verticalSpacingRegular),
+                    Text(
+                      name,
+                      textAlign: TextAlign.center,
+                      style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                    const SizedBox(height: Dimensions.verticalSpacingRegular),
+                    _profileDataCard(
+                      context,
+                      title: l10n.doctorPatientIdLabel,
+                      value: patientId,
+                    ),
+                    const SizedBox(height: Dimensions.verticalSpacingShort),
+                    _profileDataCard(
+                      context,
+                      title: l10n.ageHint,
+                      value: age,
+                    ),
+                    const SizedBox(height: Dimensions.verticalSpacingShort),
+                    _profileDataCard(
+                      context,
+                      title: l10n.genderLabel,
+                      value: gender,
+                    ),
+                    const SizedBox(height: Dimensions.verticalSpacingShort),
+                    _profileDataCard(
+                      context,
+                      title: l10n.phoneHint,
+                      value: phone,
+                    ),
+                  ],
+                ),
+              );
+            },
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _profileDataCard(
+    BuildContext context, {
+    required String title,
+    required String value,
+  }) {
+    return Container(
+      width: double.infinity,
+      padding: appPadding,
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.92),
+        borderRadius: BorderRadius.circular(Dimensions.cardCornerRadius),
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: Text(
+              title,
+              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                color: AppColorPalette.black,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ),
+          Text(
+            value,
+            style: Theme.of(context).textTheme.titleSmall?.copyWith(
+              color: AppColorPalette.blueSteel,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+        ],
       ),
     );
   }

@@ -23,6 +23,7 @@ class _MemoroAppState extends State<MemoroApp> {
         return MaterialApp(
           onGenerateTitle: (context) => AppLocalizations.of(context)!.appName,
           debugShowCheckedModeBanner: false,
+          navigatorKey: AppRouter.navigatorKey,
           theme: AppTheme.lightTheme,
           builder: (context, child) {
             return Stack(

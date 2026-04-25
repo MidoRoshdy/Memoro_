@@ -1,7 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:geolocator/geolocator.dart';
+import 'package:url_launcher/url_launcher.dart';
 
+import '../../../../core/services/auth_service.dart';
 import '../../../../core/constants/dimensions.dart';
+import '../../../../core/services/doctor_link_request_service.dart';
 import '../../../../core/theme/app_color_palette.dart';
+import '../../../../core/usecases/notification_usecases.dart';
 import '../../../../l10n/app_localizations.dart';
 
 enum _SosStage { confirm, sending, sent }
@@ -15,6 +22,213 @@ class SosPage extends StatefulWidget {
 
 class _SosPageState extends State<SosPage> {
   _SosStage _stage = _SosStage.confirm;
+  bool _sendingHelp = false;
+  String _lastSharedLocationText = '';
+
+  Stream<DocumentSnapshot<Map<String, dynamic>>?> _latestEmergencyRequestStream(
+    String patientUid,
+  ) {
+    if (patientUid.trim().isEmpty) return Stream.value(null);
+    return FirebaseFirestore.instance
+        .collection('emergencyRequests')
+        .where('patientUid', isEqualTo: patientUid)
+        .orderBy('updatedAt', descending: true)
+        .limit(1)
+        .snapshots()
+        .map((query) => query.docs.isEmpty ? null : query.docs.first);
+  }
+
+  Stream<String> _caregiverNameStream(String patientUid) {
+    if (patientUid.trim().isEmpty) return Stream.value('');
+    return DoctorLinkRequestService.watchLatestAcceptedForPatient(
+      patientUid,
+    ).map((doc) {
+      final data = doc?.data();
+      return (data?['doctorName'] as String?)?.trim() ?? '';
+    });
+  }
+
+  Future<String> _resolveEmergencyContactPhone(String patientUid) async {
+    final linked = await DoctorLinkRequestService.watchLatestAcceptedForPatient(
+      patientUid,
+    ).first;
+    final data = linked?.data();
+    if (data == null) return '';
+
+    final directPhone = (data['doctorPhone'] as String?)?.trim() ?? '';
+    if (directPhone.isNotEmpty) return directPhone;
+
+    final doctorUid = (data['doctorId'] as String?)?.trim() ?? '';
+    if (doctorUid.isEmpty) return '';
+
+    try {
+      final caregiverSnap = await AuthService.caregiverProfileRef(doctorUid).get();
+      final caregiverPhone =
+          (caregiverSnap.data()?['phone'] as String?)?.trim() ?? '';
+      return caregiverPhone;
+    } catch (_) {
+      return '';
+    }
+  }
+
+  Future<void> _callEmergencyContact() async {
+    final uid = FirebaseAuth.instance.currentUser?.uid ?? '';
+    if (uid.isEmpty) return;
+    final phone = await _resolveEmergencyContactPhone(uid);
+    if (phone.isEmpty) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Emergency contact phone not available')),
+      );
+      return;
+    }
+    final launched = await launchUrl(
+      Uri.parse('tel:$phone'),
+      mode: LaunchMode.externalApplication,
+    );
+    if (!launched && mounted) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Could not open phone app')));
+    }
+  }
+
+  Future<({double? latitude, double? longitude, String locationText, String mapsUrl})>
+  _readCurrentLocation() async {
+    ({double? latitude, double? longitude, String locationText, String mapsUrl})
+    fromPosition(Position pos) {
+      final lat = pos.latitude;
+      final lng = pos.longitude;
+      final locationText = '${lat.toStringAsFixed(5)}, ${lng.toStringAsFixed(5)}';
+      return (
+        latitude: lat,
+        longitude: lng,
+        locationText: locationText,
+        mapsUrl: 'https://maps.google.com/?q=$lat,$lng',
+      );
+    }
+
+    try {
+      final serviceEnabled = await Geolocator.isLocationServiceEnabled();
+      if (!serviceEnabled) {
+        return (
+          latitude: null,
+          longitude: null,
+          locationText: 'Location service disabled',
+          mapsUrl: '',
+        );
+      }
+
+      var permission = await Geolocator.checkPermission();
+      if (permission == LocationPermission.denied) {
+        permission = await Geolocator.requestPermission();
+      }
+      if (permission == LocationPermission.denied ||
+          permission == LocationPermission.deniedForever) {
+        return (
+          latitude: null,
+          longitude: null,
+          locationText: 'Location permission denied',
+          mapsUrl: '',
+        );
+      }
+
+      try {
+        final pos = await Geolocator.getCurrentPosition(
+          locationSettings: const LocationSettings(
+            accuracy: LocationAccuracy.high,
+            timeLimit: Duration(seconds: 8),
+          ),
+        );
+        return fromPosition(pos);
+      } catch (_) {
+        // Fallback to a faster/lower-accuracy request first.
+        try {
+          final pos = await Geolocator.getCurrentPosition(
+            locationSettings: const LocationSettings(
+              accuracy: LocationAccuracy.medium,
+              timeLimit: Duration(seconds: 6),
+            ),
+          );
+          return fromPosition(pos);
+        } catch (_) {
+          final lastKnown = await Geolocator.getLastKnownPosition();
+          if (lastKnown != null) {
+            return fromPosition(lastKnown);
+          }
+        }
+      }
+      return (
+        latitude: null,
+        longitude: null,
+        locationText: 'Location unavailable',
+        mapsUrl: '',
+      );
+    } catch (_) {
+      return (
+        latitude: null,
+        longitude: null,
+        locationText: 'Location unavailable',
+        mapsUrl: '',
+      );
+    }
+  }
+
+  Future<void> _triggerHelpRequest() async {
+    if (_sendingHelp) return;
+    setState(() {
+      _sendingHelp = true;
+      _stage = _SosStage.sending;
+    });
+    try {
+      final user = FirebaseAuth.instance.currentUser;
+      if (user == null) {
+        throw Exception('Please sign in first');
+      }
+      final linked = await DoctorLinkRequestService.watchLatestAcceptedForPatient(
+        user.uid,
+      ).first;
+      final data = linked?.data();
+      if (data == null) {
+        throw Exception('No connected doctor found');
+      }
+      final doctorUid = (data['doctorId'] as String?)?.trim() ?? '';
+      final patientName =
+          (data['patientName'] as String?)?.trim().isNotEmpty == true
+          ? (data['patientName'] as String).trim()
+          : (user.displayName?.trim() ?? '');
+      if (doctorUid.isEmpty) {
+        throw Exception('No connected doctor found');
+      }
+      final pairId = [doctorUid, user.uid]..sort();
+      final location = await _readCurrentLocation();
+      await SendHelpRequestUseCase().execute(
+        pairId: '${pairId.first}_${pairId.last}',
+        patientUid: user.uid,
+        doctorUid: doctorUid,
+        patientName: patientName,
+        latitude: location.latitude,
+        longitude: location.longitude,
+        locationText: location.locationText,
+        mapsUrl: location.mapsUrl,
+      );
+      if (!mounted) return;
+      setState(() {
+        _lastSharedLocationText = location.locationText;
+        _stage = _SosStage.sent;
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _stage = _SosStage.confirm);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(e.toString().replaceFirst('Exception: ', ''))),
+      );
+    } finally {
+      if (mounted) {
+        setState(() => _sendingHelp = false);
+      }
+    }
+  }
 
   Widget _topBar(BuildContext context, String title) {
     return Row(
@@ -89,7 +303,7 @@ class _SosPageState extends State<SosPage> {
           width: double.infinity,
           height: 54,
           child: ElevatedButton(
-            onPressed: () => setState(() => _stage = _SosStage.sending),
+            onPressed: _triggerHelpRequest,
             style: ElevatedButton.styleFrom(
               backgroundColor: AppColorPalette.redBright,
               foregroundColor: Colors.white,
@@ -170,6 +384,7 @@ class _SosPageState extends State<SosPage> {
   }
 
   Widget _sendingStage(BuildContext context, AppLocalizations l10n) {
+    final patientUid = FirebaseAuth.instance.currentUser?.uid ?? '';
     return Column(
       children: [
         _topBar(context, l10n.sosAppBarEmergencySos),
@@ -239,66 +454,87 @@ class _SosPageState extends State<SosPage> {
           ),
         ),
         const SizedBox(height: Dimensions.verticalSpacingLarge),
-        _surfaceCard(
-          child: Row(
-            children: [
-              const CircleAvatar(
-                radius: 16,
-                backgroundColor: Color(0xFFDFF1F8),
-                child: Icon(
-                  Icons.location_on_outlined,
-                  color: AppColorPalette.blueSteel,
-                ),
-              ),
-              const SizedBox(width: Dimensions.horizontalSpacingRegular),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+        StreamBuilder<DocumentSnapshot<Map<String, dynamic>>?>(
+          stream: _latestEmergencyRequestStream(patientUid),
+          builder: (context, requestSnap) {
+            final requestData = requestSnap.data?.data();
+            final locationFromDb =
+                (requestData?['locationText'] as String?)?.trim() ?? '';
+            final locationText = locationFromDb.isNotEmpty
+                ? locationFromDb
+                : (_lastSharedLocationText.trim().isNotEmpty
+                      ? _lastSharedLocationText
+                      : l10n.sosSampleAddress);
+            return _surfaceCard(
+              child: Row(
                 children: [
-                  Text(
-                    l10n.sosLabelCurrentLocation,
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: AppColorPalette.grey,
+                  const CircleAvatar(
+                    radius: 16,
+                    backgroundColor: Color(0xFFDFF1F8),
+                    child: Icon(
+                      Icons.location_on_outlined,
+                      color: AppColorPalette.blueSteel,
                     ),
                   ),
-                  Text(
-                    l10n.sosSampleAddress,
-                    style: Theme.of(context).textTheme.titleSmall,
+                  const SizedBox(width: Dimensions.horizontalSpacingRegular),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        l10n.sosLabelCurrentLocation,
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: AppColorPalette.grey,
+                        ),
+                      ),
+                      Text(
+                        locationText,
+                        style: Theme.of(context).textTheme.titleSmall,
+                      ),
+                    ],
                   ),
                 ],
               ),
-            ],
-          ),
+            );
+          },
         ),
         const SizedBox(height: Dimensions.verticalSpacingRegular),
-        _surfaceCard(
-          child: Row(
-            children: [
-              const CircleAvatar(
-                radius: 16,
-                backgroundColor: Color(0xFFFFEFD7),
-                child: Icon(
-                  Icons.perm_phone_msg_outlined,
-                  color: AppColorPalette.brownOlive,
-                ),
-              ),
-              const SizedBox(width: Dimensions.horizontalSpacingRegular),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+        StreamBuilder<String>(
+          stream: _caregiverNameStream(patientUid),
+          builder: (context, doctorNameSnap) {
+            final doctorName = doctorNameSnap.data?.trim() ?? '';
+            return _surfaceCard(
+              child: Row(
                 children: [
-                  Text(
-                    l10n.sosLabelPrimaryContact,
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: AppColorPalette.grey,
+                  const CircleAvatar(
+                    radius: 16,
+                    backgroundColor: Color(0xFFFFEFD7),
+                    child: Icon(
+                      Icons.perm_phone_msg_outlined,
+                      color: AppColorPalette.brownOlive,
                     ),
                   ),
-                  Text(
-                    l10n.sosSamplePrimaryContact,
-                    style: Theme.of(context).textTheme.titleSmall,
+                  const SizedBox(width: Dimensions.horizontalSpacingRegular),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        l10n.sosLabelPrimaryContact,
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: AppColorPalette.grey,
+                        ),
+                      ),
+                      Text(
+                        doctorName.isNotEmpty
+                            ? doctorName
+                            : l10n.sosSamplePrimaryContact,
+                        style: Theme.of(context).textTheme.titleSmall,
+                      ),
+                    ],
                   ),
                 ],
               ),
-            ],
-          ),
+            );
+          },
         ),
         const SizedBox(height: Dimensions.verticalSpacingLarge),
         SizedBox(
@@ -417,7 +653,7 @@ class _SosPageState extends State<SosPage> {
           width: double.infinity,
           height: 60,
           child: ElevatedButton.icon(
-            onPressed: () {},
+            onPressed: _callEmergencyContact,
             icon: const Icon(Icons.phone_outlined, size: 25),
             label: Text(
               l10n.sosCallEmergencyNumber,
@@ -464,7 +700,7 @@ class _SosPageState extends State<SosPage> {
                   width: double.infinity,
                   height: 48,
                   child: ElevatedButton(
-                    onPressed: () => setState(() => _stage = _SosStage.sent),
+                    onPressed: _sendingHelp ? null : () => setState(() => _stage = _SosStage.sent),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppColorPalette.blueSteel.withValues(
                         alpha: 0.25,

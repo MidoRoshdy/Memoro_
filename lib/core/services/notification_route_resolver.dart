@@ -1,0 +1,111 @@
+import 'dart:convert';
+
+import 'package:flutter/material.dart';
+
+import '../../flows/doctor/pages/activity/doctor_activity_details_page.dart';
+import '../../flows/doctor/pages/medicine/doctor_medicine_details_page.dart';
+import '../../flows/shared/chat/chat_conversation_page.dart';
+import '../router/app_router.dart';
+
+abstract final class NotificationRouteResolver {
+  NotificationRouteResolver._();
+
+  static Future<void> openFromPayload(Map<String, dynamic> payload) async {
+    final context = AppRouter.navigatorKey.currentContext;
+    if (context == null) return;
+
+    final type = (payload['type'] as String?)?.trim() ?? '';
+    final pairId = (payload['pairId'] as String?)?.trim() ?? '';
+    final entityId = (payload['entityId'] as String?)?.trim() ?? '';
+    final data = _readData(payload);
+
+    if (type == 'activity_assigned' || type == 'activity_done') {
+      final doctorUid = (data['doctorUid'] as String?)?.trim() ?? '';
+      final patientUid = (data['patientUid'] as String?)?.trim() ?? '';
+      final patientName =
+          (data['patientName'] as String?)?.trim().isNotEmpty == true
+          ? (data['patientName'] as String).trim()
+          : 'Patient';
+      if (pairId.isNotEmpty &&
+          entityId.isNotEmpty &&
+          doctorUid.isNotEmpty &&
+          patientUid.isNotEmpty) {
+        await Navigator.of(context).push(
+          MaterialPageRoute<void>(
+            builder: (_) => DoctorActivityDetailsPage(
+              activityDocId: pairId,
+              activityItemId: entityId,
+              doctorUid: doctorUid,
+              patientUid: patientUid,
+              patientName: patientName,
+            ),
+          ),
+        );
+        return;
+      }
+    }
+
+    if (type == 'medication_reminder') {
+      if (pairId.isNotEmpty && entityId.isNotEmpty) {
+        await Navigator.of(context).push(
+          MaterialPageRoute<void>(
+            builder: (_) => DoctorMedicineDetailsPage(
+              medicineDocId: pairId,
+              medicineItemId: entityId,
+            ),
+          ),
+        );
+        return;
+      }
+    }
+
+    if (type == 'help_request') {
+      await Navigator.of(context).pushNamed(AppRouter.notifications);
+      return;
+    }
+
+    if (type == 'chat_message') {
+      final chatId = (data['chatId'] as String?)?.trim() ?? pairId;
+      final currentUserId = (data['currentUserId'] as String?)?.trim() ?? '';
+      final title =
+          (data['title'] as String?)?.trim().isNotEmpty == true
+          ? (data['title'] as String).trim()
+          : 'Chat';
+      final avatarUrl = (data['avatarUrl'] as String?)?.trim() ?? '';
+      if (chatId.isNotEmpty && currentUserId.isNotEmpty) {
+        await Navigator.of(context).push(
+          MaterialPageRoute<void>(
+            builder: (_) => ChatConversationPage(
+              chatId: chatId,
+              currentUserId: currentUserId,
+              title: title,
+              avatarUrl: avatarUrl,
+            ),
+          ),
+        );
+        return;
+      }
+    }
+
+    await Navigator.of(context).pushNamed(AppRouter.notifications);
+  }
+
+  static Map<String, dynamic> _readData(Map<String, dynamic> payload) {
+    final rawData = payload['data'];
+    if (rawData is Map<String, dynamic>) return rawData;
+    if (rawData is String && rawData.trim().isNotEmpty) {
+      final decoded = jsonDecode(rawData);
+      if (decoded is Map<String, dynamic>) {
+        return decoded;
+      }
+    }
+    final rawArgs = payload['argsJson'];
+    if (rawArgs is String && rawArgs.trim().isNotEmpty) {
+      final decoded = jsonDecode(rawArgs);
+      if (decoded is Map<String, dynamic>) {
+        return decoded;
+      }
+    }
+    return const <String, dynamic>{};
+  }
+}

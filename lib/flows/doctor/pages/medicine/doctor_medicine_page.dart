@@ -7,6 +7,7 @@ import '../../../../core/models/medicine_item.dart';
 import '../../../../core/services/doctor_link_request_service.dart';
 import '../../../../core/services/medicine_service.dart';
 import '../../../../core/theme/app_color_palette.dart';
+import '../../../../core/usecases/notification_usecases.dart';
 import '../../../../l10n/app_localizations.dart';
 import 'doctor_add_medicine_page.dart';
 import 'doctor_medicine_details_page.dart';
@@ -18,6 +19,7 @@ class DoctorMedicinePage extends StatelessWidget {
     BuildContext context,
     AppLocalizations l10n,
     int missedCount,
+    VoidCallback onViewDetails,
   ) {
     return Container(
       width: double.infinity,
@@ -56,7 +58,7 @@ class DoctorMedicinePage extends StatelessWidget {
             ),
           ),
           FilledButton(
-            onPressed: () {},
+            onPressed: onViewDetails,
             style: FilledButton.styleFrom(
               backgroundColor: const Color(0xFFEF5B5B),
               foregroundColor: Colors.white,
@@ -307,6 +309,12 @@ class DoctorMedicinePage extends StatelessWidget {
               stream: MedicineService.watchMedicines(medicineDocId),
               builder: (context, medSnap) {
                 final meds = medSnap.data ?? const <MedicineItem>[];
+                Future.microtask(() async {
+                  final scheduler = ScheduleMedicationReminderUseCase();
+                  for (final med in meds.where((m) => !m.isTaken)) {
+                    await scheduler.execute(item: med, pairId: medicineDocId);
+                  }
+                });
                 final takenCount = meds.where((m) => m.isTaken).length;
                 final missedCount = meds.where((m) => m.isMissed).length;
                 final scheduleItems = meds.take(3).toList();
@@ -368,7 +376,21 @@ class DoctorMedicinePage extends StatelessWidget {
                         ],
                       ),
                       const SizedBox(height: Dimensions.verticalSpacingRegular),
-                      _alertCard(context, l10n, missedCount),
+                      _alertCard(
+                        context,
+                        l10n,
+                        missedCount,
+                        () {
+                          final missed = meds.where((m) => m.isMissed).toList();
+                          if (missed.isNotEmpty) {
+                            openMedicineDetails(missed.first);
+                            return;
+                          }
+                          if (meds.isNotEmpty) {
+                            openMedicineDetails(meds.first);
+                          }
+                        },
+                      ),
                       const SizedBox(height: Dimensions.verticalSpacingRegular),
                       _statCard(
                         context,

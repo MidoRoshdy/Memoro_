@@ -83,6 +83,7 @@
   "tabHome": "Home",
   "tabChat": "Chat",
   "tabGames": "Games",
+  "tabActivity": "Activity",
   "tabMedicine": "Medicine",
   "tabProfile": "Profile",
   "fabTapped": "Floating Action Button tapped",
@@ -125,6 +126,7 @@
   "gameSequenceSubtitle": "Watch the order, then repeat it.",
   "gameMathTitle": "Quick Math Challenge",
   "gameMathSubtitle": "Solve simple math as fast as you can.",
+  "patientActivitySectionTitle": "Activities",
   "restartTooltip": "Restart",
   "closeLabel": "Close",
   "playAgainLabel": "Play Again",
@@ -361,6 +363,14 @@
   "doctorStatusStable": "Stable",
   "doctorPatientProgressTitle": "Patient Progress",
   "doctorWellnessScoreLine": "This week's overall wellness score.",
+  "doctorProgressNoItemsYet": "No medicines or activities assigned yet.",
+  "doctorProgressSummary": "{done} of {total} medicines and activities completed.",
+  "@doctorProgressSummary": {
+    "placeholders": {
+      "done": {},
+      "total": {}
+    }
+  },
   "doctorWellnessPercent": "{percent}%",
   "@doctorWellnessPercent": {
     "placeholders": {
@@ -402,6 +412,93 @@
     }
   },
   "doctorAssignActivity": "Assign Activity",
+  "doctorActivityNoActivitiesYet": "No activities assigned yet.",
+  "doctorActivityTitleRequired": "Activity title is required.",
+  "doctorActivityTitleLabel": "Activity title",
+  "doctorActivityTitleHint": "Drink water / Morning walk / Stretching",
+  "doctorActivityTypeLabel": "Activity type",
+  "doctorActivityTypeWater": "Water",
+  "doctorActivityTypeExercise": "Exercise",
+  "doctorActivityTypeBreathing": "Breathing",
+  "doctorActivityTypeOther": "Other",
+  "doctorActivityTargetLabel": "Target",
+  "doctorActivityTargetHint": "8 glasses / 20 mins / 1 session",
+  "doctorActivityTimeLabel": "Time: {time}",
+  "@doctorActivityTimeLabel": {
+    "placeholders": {
+      "time": {}
+    }
+  },
+  "doctorActivityInstructionsLabel": "Instructions",
+  "doctorActivityInstructionsHint": "Any extra details for the patient...",
+  "doctorActivityDoneButton": "Done",
+  "doctorActivityLatestWithTime": "{title} at {time}",
+  "@doctorActivityLatestWithTime": {
+    "placeholders": {
+      "title": {},
+      "time": {}
+    }
+  },
+  "doctorActivityNoMissedNow": "No missed activities right now.",
+  "doctorActivityOverdueBy": "Overdue by {duration}",
+  "@doctorActivityOverdueBy": {
+    "placeholders": {
+      "duration": {}
+    }
+  },
+  "doctorActivityDurationHoursMinutes": "{hours}h {minutes}m",
+  "@doctorActivityDurationHoursMinutes": {
+    "placeholders": {
+      "hours": {},
+      "minutes": {}
+    }
+  },
+  "doctorActivityDurationMinutes": "{minutes}m",
+  "@doctorActivityDurationMinutes": {
+    "placeholders": {
+      "minutes": {}
+    }
+  },
+  "doctorActivityTotal": "Total Activities",
+  "doctorActivityTakenToday": "Taken Today",
+  "doctorActivityMissed": "Missed",
+  "doctorActivityWeeklyProgress": "Weekly Progress",
+  "doctorActivityWeeklySubtitle": "Activities completed this week. You're on track for the target.",
+  "doctorActivityRecentResultTitle": "Recent Result",
+  "doctorActivityRecentResultSubtitle": "High accuracy achieved today",
+  "doctorActivityAssignDetails": "Assign Details",
+  "doctorActivityFinishedOnTime": "Finished on time",
+  "doctorActivityScoreLabel": "Score",
+  "doctorActivityLevel": "Level",
+  "doctorActivityAssignedDate": "Assigned Date",
+  "doctorActivityScheduledTime": "Scheduled Time",
+  "doctorActivityDuration": "Duration",
+  "doctorActivityMinutesUnit": "minutes",
+  "doctorActivityAssignedBy": "Assigned By",
+  "doctorActivityPerformanceSummary": "Performance Summary",
+  "doctorActivityFinalScore": "Final Score",
+  "doctorActivityTimeTaken": "Time Taken",
+  "doctorActivityCorrectMatches": "Correct Matches",
+  "doctorActivityTotalAttempts": "Total Attempts",
+  "doctorActivityVisibleForPatient": "Visible for patient",
+  "doctorActivityEditActivity": "Edit Activity",
+  "doctorActivityCancelActivity": "Cancel Activity",
+  "doctorActivityStatusCancelled": "Cancelled",
+  "doctorActivityAssignedGames": "Assigned Games",
+  "doctorGamesShowMemory": "Show memory games",
+  "doctorGamesShowOnline": "Show online games",
+  "doctorGamesShowSudoku": "Show Sudoku",
+  "doctorGamesShowSimon": "Show Simon Says",
+  "doctorGamesTitleLabel": "Game title",
+  "doctorGamesTitleHint": "Puzzle 2048",
+  "doctorGamesUrlLabel": "Game URL",
+  "doctorGamesUrlHint": "https://...",
+  "doctorGamesAddLink": "Add game link",
+  "doctorGamesRequiredFields": "Please fill game title and URL.",
+  "doctorGamesNoCustomLinks": "No custom links yet.",
+  "doctorGamesLinkAdded": "Game link added.",
+  "doctorGamesHide": "Hide",
+  "doctorGamesShow": "Show",
   "doctorFamilyMembersTitle": "Family Members",
   "doctorManageFamily": "Manage Family",
   "doctorPatientAgeRoom": "Age {age} · Room {room}",
@@ -447,6 +544,14 @@
   "doctorMedMissed": "Missed",
   "doctorMedTodaySchedule": "Today's Schedule",
   "doctorMedNoMedicationYet": "No medications yet.",
+  "doctorMedNoMissedNow": "No missed medications right now.",
+  "doctorMedLatestWithTime": "{title} at {time}",
+  "@doctorMedLatestWithTime": {
+    "placeholders": {
+      "title": {},
+      "time": {}
+    }
+  },
   "doctorMedAllMedications": "All Medications",
   "doctorMedAddMedication": "Add Medication",
   "doctorMedMedicationDetailsButton": "Medications Details",

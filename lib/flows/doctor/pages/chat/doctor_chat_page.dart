@@ -83,8 +83,37 @@ class _DoctorChatPageState extends State<DoctorChatPage> {
     required String subtitle,
     required String time,
     required Widget leading,
+    int unreadCount = 0,
     VoidCallback? onTap,
   }) {
+    final hasUnread = unreadCount > 0;
+    final leadingWithUnread = Stack(
+      clipBehavior: Clip.none,
+      children: [
+        leading,
+        if (hasUnread)
+          PositionedDirectional(
+            top: -4,
+            end: -2,
+            child: Container(
+              constraints: const BoxConstraints(minWidth: 24, minHeight: 24),
+              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+              decoration: const BoxDecoration(
+                color: Colors.red,
+                shape: BoxShape.circle,
+              ),
+              alignment: Alignment.center,
+              child: Text(
+                unreadCount > 99 ? '99+' : '$unreadCount',
+                style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+            ),
+          ),
+      ],
+    );
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(16),
@@ -96,7 +125,7 @@ class _DoctorChatPageState extends State<DoctorChatPage> {
         ),
         child: Row(
           children: [
-            leading,
+            leadingWithUnread,
             const SizedBox(width: Dimensions.horizontalSpacingRegular),
             Expanded(
               child: Column(
@@ -118,19 +147,25 @@ class _DoctorChatPageState extends State<DoctorChatPage> {
                     style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                       color: AppColorPalette.grey,
                       height: 1.3,
+                      fontWeight: hasUnread ? FontWeight.w700 : FontWeight.w500,
                     ),
                   ),
                 ],
               ),
             ),
             const SizedBox(width: Dimensions.horizontalSpacingRegular),
-            Text(
-              time,
-              textAlign: TextAlign.center,
-              style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                color: AppColorPalette.grey,
-                fontWeight: FontWeight.w700,
-              ),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                Text(
+                  time,
+                  textAlign: TextAlign.center,
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    color: AppColorPalette.grey,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ],
             ),
           ],
         ),
@@ -217,6 +252,10 @@ class _DoctorChatPageState extends State<DoctorChatPage> {
                     final lastMessageAt = lastMessageAtRaw is Timestamp
                         ? lastMessageAtRaw.toDate()
                         : null;
+                    final unreadCount = ChatService.unreadCountForUser(
+                      chatData,
+                      currentUserId,
+                    );
                     return _chatTile(
                       context: context,
                       title: patientName,
@@ -224,6 +263,7 @@ class _DoctorChatPageState extends State<DoctorChatPage> {
                           ? lastMessage
                           : l10n.chatCaregiverCardSubtitle,
                       time: _formatChatTime(context, lastMessageAt),
+                      unreadCount: unreadCount,
                       leading: Container(
                         width: 74,
                         height: 74,

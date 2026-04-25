@@ -23,7 +23,9 @@ class _ChatPageState extends State<ChatPage> {
     if (value == null) return '--:--';
     final now = DateTime.now();
     final isToday =
-        value.year == now.year && value.month == now.month && value.day == now.day;
+        value.year == now.year &&
+        value.month == now.month &&
+        value.day == now.day;
     if (isToday) {
       return MaterialLocalizations.of(
         context,
@@ -84,8 +86,37 @@ class _ChatPageState extends State<ChatPage> {
     required String subtitle,
     required String time,
     required Widget leading,
+    int unreadCount = 0,
     VoidCallback? onTap,
   }) {
+    final hasUnread = unreadCount > 0;
+    final leadingWithUnread = Stack(
+      clipBehavior: Clip.none,
+      children: [
+        leading,
+        if (hasUnread)
+          PositionedDirectional(
+            top: -4,
+            end: -2,
+            child: Container(
+              constraints: const BoxConstraints(minWidth: 24, minHeight: 24),
+              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+              decoration: const BoxDecoration(
+                color: Colors.red,
+                shape: BoxShape.circle,
+              ),
+              alignment: Alignment.center,
+              child: Text(
+                unreadCount > 99 ? '99+' : '$unreadCount',
+                style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+            ),
+          ),
+      ],
+    );
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(16),
@@ -97,7 +128,7 @@ class _ChatPageState extends State<ChatPage> {
         ),
         child: Row(
           children: [
-            leading,
+            leadingWithUnread,
             const SizedBox(width: Dimensions.horizontalSpacingRegular),
             Expanded(
               child: Column(
@@ -119,19 +150,25 @@ class _ChatPageState extends State<ChatPage> {
                     style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                       color: AppColorPalette.grey,
                       height: 1.3,
+                      fontWeight: hasUnread ? FontWeight.w700 : FontWeight.w500,
                     ),
                   ),
                 ],
               ),
             ),
             const SizedBox(width: Dimensions.horizontalSpacingRegular),
-            Text(
-              time,
-              textAlign: TextAlign.center,
-              style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                color: AppColorPalette.grey,
-                fontWeight: FontWeight.w700,
-              ),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                Text(
+                  time,
+                  textAlign: TextAlign.center,
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    color: AppColorPalette.grey,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ],
             ),
           ],
         ),
@@ -184,16 +221,21 @@ class _ChatPageState extends State<ChatPage> {
             const SizedBox(height: Dimensions.verticalSpacingRegular),
             StreamBuilder<QueryDocumentSnapshot<Map<String, dynamic>>?>(
               stream: currentUserId.isEmpty
-                  ? const Stream<QueryDocumentSnapshot<Map<String, dynamic>>?>.empty()
+                  ? const Stream<
+                      QueryDocumentSnapshot<Map<String, dynamic>>?
+                    >.empty()
                   : DoctorLinkRequestService.watchLatestAcceptedForPatient(
                       currentUserId,
                     ),
               builder: (context, snapshot) {
                 final request = snapshot.data;
                 final requestData = request?.data();
-                final doctorId = (requestData?['doctorId'] as String?)?.trim() ?? '';
+                final doctorId =
+                    (requestData?['doctorId'] as String?)?.trim() ?? '';
                 final doctorName =
-                    (requestData?['doctorName'] as String?)?.trim().isNotEmpty ==
+                    (requestData?['doctorName'] as String?)
+                            ?.trim()
+                            .isNotEmpty ==
                         true
                     ? (requestData!['doctorName'] as String).trim()
                     : l10n.chatCaregiverCardTitle;
@@ -249,6 +291,10 @@ class _ChatPageState extends State<ChatPage> {
                     final lastMessageAt = lastMessageAtRaw is Timestamp
                         ? lastMessageAtRaw.toDate()
                         : null;
+                    final unreadCount = ChatService.unreadCountForUser(
+                      chatData,
+                      currentUserId,
+                    );
                     return _chatTile(
                       context: context,
                       title: doctorName,
@@ -256,6 +302,7 @@ class _ChatPageState extends State<ChatPage> {
                           ? lastMessage
                           : l10n.chatCaregiverCardSubtitle,
                       time: _formatChatTime(context, lastMessageAt),
+                      unreadCount: unreadCount,
                       leading: Container(
                         width: 74,
                         height: 74,

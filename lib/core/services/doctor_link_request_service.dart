@@ -110,7 +110,10 @@ abstract final class DoctorLinkRequestService {
 
   static Stream<QueryDocumentSnapshot<Map<String, dynamic>>?>
   watchLatestAcceptedForPatient(String patientUid) {
-    return _requests().snapshots().map((snap) {
+    return _requests()
+        .where('patientUid', isEqualTo: patientUid)
+        .snapshots()
+        .map((snap) {
       return pickLatestForPatient(
         snap.docs,
         patientUid,

@@ -33,6 +33,26 @@ class _ChatConversationPageState extends State<ChatConversationPage> {
   ];
 
   bool _sending = false;
+  bool _resettingUnread = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _resetUnread();
+  }
+
+  Future<void> _resetUnread() async {
+    if (_resettingUnread) return;
+    _resettingUnread = true;
+    try {
+      await ChatService.resetUnreadCount(
+        chatId: widget.chatId,
+        uid: widget.currentUserId,
+      );
+    } finally {
+      _resettingUnread = false;
+    }
+  }
 
   @override
   void dispose() {
@@ -221,6 +241,7 @@ class _ChatConversationPageState extends State<ChatConversationPage> {
                   WidgetsBinding.instance.addPostFrameCallback((_) {
                     _scrollToBottom();
                   });
+                  Future.microtask(_resetUnread);
                   return Column(
                     children: [
                       Container(

@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/constants/dimensions.dart';
+import '../../../core/providers/notification_provider.dart';
 import '../../../core/router/app_router.dart';
 import '../../../core/theme/app_color_palette.dart';
 import '../../../l10n/app_localizations.dart';
@@ -8,7 +10,7 @@ import '../../../l10n/app_localizations.dart';
 /// Shared notification entry: white circle, bell icon, red badge → [AppRouter.notifications].
 ///
 /// Use [diameter] = [defaultDiameter] on the home header; use [compactDiameter] on compact app bars.
-class AppNotificationsAction extends StatelessWidget {
+class AppNotificationsAction extends ConsumerWidget {
   const AppNotificationsAction({super.key, this.diameter = defaultDiameter});
 
   /// Matches home header: `verticalSpacingXL + horizontalSpacingShort`.
@@ -21,7 +23,8 @@ class AppNotificationsAction extends StatelessWidget {
   final double diameter;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final unread = ref.watch(unreadNotificationCountProvider).asData?.value ?? 0;
     final tooltip =
         AppLocalizations.of(context)?.notifScreenTitle ?? 'Notifications';
     final iconSize = (diameter * 0.52).clamp(20.0, 28.0);
@@ -55,18 +58,31 @@ class AppNotificationsAction extends StatelessWidget {
                     color: AppColorPalette.blueSteel,
                     size: iconSize,
                   ),
-                  Positioned(
-                    left: badgeLeft,
-                    top: badgeTop,
-                    child: Container(
-                      width: badgeSize,
-                      height: badgeSize,
-                      decoration: const BoxDecoration(
-                        color: Colors.red,
-                        shape: BoxShape.circle,
+                  if (unread > 0)
+                    Positioned(
+                      left: badgeLeft,
+                      top: badgeTop,
+                      child: Container(
+                        constraints: BoxConstraints(
+                          minWidth: badgeSize * 2.1,
+                          minHeight: badgeSize * 2.1,
+                        ),
+                        padding: const EdgeInsets.symmetric(horizontal: 3),
+                        alignment: Alignment.center,
+                        decoration: const BoxDecoration(
+                          color: Colors.red,
+                          shape: BoxShape.circle,
+                        ),
+                        child: Text(
+                          unread > 99 ? '99+' : '$unread',
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 8,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
                       ),
                     ),
-                  ),
                 ],
               ),
             ),

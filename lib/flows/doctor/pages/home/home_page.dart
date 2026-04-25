@@ -108,7 +108,7 @@ class _DoctorHomePageState extends State<DoctorHomePage> {
             BottomNavigationBarItem(
               icon: _navBarIcon(AppAssets.navGame),
               activeIcon: _navBarIcon(AppAssets.navGameActive),
-              label: l10n.tabGames,
+              label: l10n.tabActivity,
             ),
             BottomNavigationBarItem(
               icon: _navBarIcon(AppAssets.navMedicine),

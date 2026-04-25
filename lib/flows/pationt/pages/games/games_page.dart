@@ -1,6 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 import '../../../../core/constants/dimensions.dart';
+import '../../../../core/models/game_link_item.dart';
+import '../../../../core/services/doctor_link_request_service.dart';
+import '../../../../core/services/games_service.dart';
 import '../../../../core/theme/app_color_palette.dart';
 import '../../widgets/app_notifications_action.dart';
 import '../../../../l10n/app_localizations.dart';
@@ -10,10 +15,40 @@ import 'online_game_webview_page.dart';
 class GamesPage extends StatelessWidget {
   const GamesPage({super.key});
 
-  void _openMemoryHub(BuildContext context) {
-    Navigator.of(
-      context,
-    ).push(MaterialPageRoute<void>(builder: (_) => const MemoryTestHubPage()));
+  List<OnlineGameLink> _buildOnlineLinks(
+    List<GameLinkItem> customLinks,
+    GamesConfig config,
+  ) {
+    final builtIn = <OnlineGameLink>[
+      if (config.showHumanBenchmark) kOnlineGameHumanBenchmark,
+      if (config.showHelpfulMemory) kOnlineGameHelpfulMemory,
+      if (config.showJigsaw) kOnlineGameJigsaw,
+      if (config.showChess) kOnlineGameChess,
+    ];
+    final visibleCustom = customLinks
+        .where((e) => e.isVisible && e.title.isNotEmpty && e.url.isNotEmpty)
+        .map(
+          (e) => OnlineGameLink(
+            icon: Icons.public_rounded,
+            color: AppColorPalette.blueSteel,
+            title: e.title,
+            url: e.url,
+          ),
+        )
+        .toList();
+    return <OnlineGameLink>[...builtIn, ...visibleCustom];
+  }
+
+  void _openMemoryHub(BuildContext context, GamesConfig config) {
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) => MemoryTestHubPage(
+          showImageMemoryTest: config.showImageMemoryTest,
+          showDailyRecallTest: config.showDailyRecallTest,
+          showQuickMath: config.showQuickMath,
+        ),
+      ),
+    );
   }
 
   Widget _topBar(BuildContext context, AppLocalizations l10n) {
@@ -36,7 +71,11 @@ class GamesPage extends StatelessWidget {
     );
   }
 
-  Widget _featuredCard(BuildContext context, AppLocalizations l10n) {
+  Widget _featuredCard(
+    BuildContext context,
+    AppLocalizations l10n,
+    GamesConfig config,
+  ) {
     return Container(
       width: double.infinity,
       padding: appPadding,
@@ -98,7 +137,7 @@ class GamesPage extends StatelessWidget {
               SizedBox(
                 height: 48,
                 child: ElevatedButton.icon(
-                  onPressed: () => _openMemoryHub(context),
+                  onPressed: () => _openMemoryHub(context, config),
                   icon: const Icon(Icons.play_arrow_rounded, size: 22),
                   label: Text(l10n.gamesHubStartNow),
                   style: ElevatedButton.styleFrom(
@@ -261,81 +300,172 @@ class GamesPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
+    final patientUid = FirebaseAuth.instance.currentUser?.uid ?? '';
+
+    if (patientUid.isEmpty) {
+      return const SizedBox.shrink();
+    }
+
     return SafeArea(
       child: Padding(
         padding: appPadding,
-        child: SingleChildScrollView(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              _topBar(context, l10n),
-              const SizedBox(height: Dimensions.verticalSpacingRegular),
-              _featuredCard(context, l10n),
-              _sectionTitle(context, l10n.gamesOnlineSectionTitle),
-              GridView.count(
-                crossAxisCount: 2,
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                mainAxisSpacing: Dimensions.verticalSpacingRegular,
-                crossAxisSpacing: Dimensions.verticalSpacingRegular,
-                childAspectRatio: 0.98,
-                children: [
-                  for (final link in kDefaultOnlineGameLinks)
-                    _miniGameTile(
-                      context: context,
-                      icon: link.icon,
-                      iconColor: link.color,
-                      title: link.title,
-                      actionLabel: l10n.gamesHubStartNow,
-                      onTap: () {
-                        Navigator.of(context).push(
-                          MaterialPageRoute<void>(
-                            builder: (_) => OnlineGameWebViewPage(game: link),
-                          ),
-                        );
-                      },
-                    ),
-                ],
-              ),
-              _sectionTitle(context, l10n.gamesAdvancedGamesSectionTitle),
-              _advancedRow(
-                context: context,
-                l10n: l10n,
-                icon: kOnlineGameSudoku.icon,
-                title: l10n.gamesSudokuTitle,
-                subtitle: l10n.gamesSudokuSubtitle,
-                playColor: kOnlineGameSudoku.color,
-                iconAccentColor: kOnlineGameSudoku.color,
-                onPlay: () {
-                  Navigator.of(context).push(
-                    MaterialPageRoute<void>(
-                      builder: (_) =>
-                          const OnlineGameWebViewPage(game: kOnlineGameSudoku),
-                    ),
-                  );
-                },
-              ),
-              _advancedRow(
-                context: context,
-                l10n: l10n,
-                icon: kOnlineGameSimonSays.icon,
-                title: l10n.gamesSimonSaysTitle,
-                subtitle: l10n.gamesSimonSaysSubtitle,
-                playColor: kOnlineGameSimonSays.color,
-                iconAccentColor: kOnlineGameSimonSays.color,
-                onPlay: () {
-                  Navigator.of(context).push(
-                    MaterialPageRoute<void>(
-                      builder: (_) => const OnlineGameWebViewPage(
-                        game: kOnlineGameSimonSays,
-                      ),
-                    ),
-                  );
-                },
-              ),
-              const SizedBox(height: bottomNavigationBarPadding),
-            ],
+        child: StreamBuilder<QueryDocumentSnapshot<Map<String, dynamic>>?>(
+          stream: DoctorLinkRequestService.watchLatestAcceptedForPatient(
+            patientUid,
           ),
+          builder: (context, linkSnap) {
+            final request = linkSnap.data;
+            final data = request?.data();
+            final doctorUid = (data?['doctorId'] as String?)?.trim() ?? '';
+            if (doctorUid.isEmpty) {
+              return Center(
+                child: Text(
+                  l10n.doctorMedConnectFirst,
+                  textAlign: TextAlign.center,
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              );
+            }
+            final gamesDocId = doctorUid.isNotEmpty
+                ? GamesService.buildGamesDocId(doctorUid, patientUid)
+                : '';
+
+            final configStream = gamesDocId.isEmpty
+                ? const Stream<GamesConfig>.empty()
+                : GamesService.watchConfig(gamesDocId);
+            final linksStream = gamesDocId.isEmpty
+                ? const Stream<List<GameLinkItem>>.empty()
+                : GamesService.watchLinks(gamesDocId);
+
+            return StreamBuilder<GamesConfig>(
+              stream: configStream,
+              builder: (context, configSnap) {
+                final config =
+                    configSnap.data ??
+                    const GamesConfig(
+                      showMemoryHub: true,
+                      showImageMemoryTest: true,
+                      showDailyRecallTest: true,
+                      showQuickMath: true,
+                      showOnlineSection: true,
+                      showHumanBenchmark: true,
+                      showHelpfulMemory: true,
+                      showJigsaw: true,
+                      showChess: true,
+                      showSudoku: true,
+                      showSimonSays: true,
+                    );
+                return StreamBuilder<List<GameLinkItem>>(
+                  stream: linksStream,
+                  builder: (context, linksSnap) {
+                    final onlineLinks = _buildOnlineLinks(
+                      linksSnap.data ?? const <GameLinkItem>[],
+                      config,
+                    );
+                    return SingleChildScrollView(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          _topBar(context, l10n),
+                          const SizedBox(
+                            height: Dimensions.verticalSpacingRegular,
+                          ),
+                          if (config.showMemoryHub)
+                            _featuredCard(context, l10n, config),
+                          if (config.showOnlineSection &&
+                              onlineLinks.isNotEmpty) ...[
+                            _sectionTitle(
+                              context,
+                              l10n.gamesOnlineSectionTitle,
+                            ),
+                            GridView.count(
+                              crossAxisCount: 2,
+                              shrinkWrap: true,
+                              physics: const NeverScrollableScrollPhysics(),
+                              mainAxisSpacing:
+                                  Dimensions.verticalSpacingRegular,
+                              crossAxisSpacing:
+                                  Dimensions.verticalSpacingRegular,
+                              // Make cards taller to avoid small RenderFlex overflow.
+                              childAspectRatio: 0.86,
+                              children: [
+                                for (final link in onlineLinks)
+                                  _miniGameTile(
+                                    context: context,
+                                    icon: link.icon,
+                                    iconColor: link.color,
+                                    title: link.title,
+                                    actionLabel: l10n.gamesHubStartNow,
+                                    onTap: () {
+                                      Navigator.of(context).push(
+                                        MaterialPageRoute<void>(
+                                          builder: (_) =>
+                                              OnlineGameWebViewPage(game: link),
+                                        ),
+                                      );
+                                    },
+                                  ),
+                              ],
+                            ),
+                          ],
+                          if (config.showSudoku || config.showSimonSays) ...[
+                            _sectionTitle(
+                              context,
+                              l10n.gamesAdvancedGamesSectionTitle,
+                            ),
+                            if (config.showSudoku)
+                              _advancedRow(
+                                context: context,
+                                l10n: l10n,
+                                icon: kOnlineGameSudoku.icon,
+                                title: l10n.gamesSudokuTitle,
+                                subtitle: l10n.gamesSudokuSubtitle,
+                                playColor: kOnlineGameSudoku.color,
+                                iconAccentColor: kOnlineGameSudoku.color,
+                                onPlay: () {
+                                  Navigator.of(context).push(
+                                    MaterialPageRoute<void>(
+                                      builder: (_) =>
+                                          const OnlineGameWebViewPage(
+                                            game: kOnlineGameSudoku,
+                                          ),
+                                    ),
+                                  );
+                                },
+                              ),
+                            if (config.showSimonSays)
+                              _advancedRow(
+                                context: context,
+                                l10n: l10n,
+                                icon: kOnlineGameSimonSays.icon,
+                                title: l10n.gamesSimonSaysTitle,
+                                subtitle: l10n.gamesSimonSaysSubtitle,
+                                playColor: kOnlineGameSimonSays.color,
+                                iconAccentColor: kOnlineGameSimonSays.color,
+                                onPlay: () {
+                                  Navigator.of(context).push(
+                                    MaterialPageRoute<void>(
+                                      builder: (_) =>
+                                          const OnlineGameWebViewPage(
+                                            game: kOnlineGameSimonSays,
+                                          ),
+                                    ),
+                                  );
+                                },
+                              ),
+                          ],
+                          const SizedBox(height: bottomNavigationBarPadding),
+                        ],
+                      ),
+                    );
+                  },
+                );
+              },
+            );
+          },
         ),
       ),
     );

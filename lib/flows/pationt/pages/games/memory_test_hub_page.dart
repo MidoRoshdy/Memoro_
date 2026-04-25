@@ -10,7 +10,16 @@ import 'sequence_memory_game_page.dart';
 
 /// In-app memory / brain games (Flutter screens), opened from the main Games tab.
 class MemoryTestHubPage extends StatelessWidget {
-  const MemoryTestHubPage({super.key});
+  const MemoryTestHubPage({
+    super.key,
+    this.showImageMemoryTest = true,
+    this.showDailyRecallTest = true,
+    this.showQuickMath = true,
+  });
+
+  final bool showImageMemoryTest;
+  final bool showDailyRecallTest;
+  final bool showQuickMath;
 
   Widget _topBar(BuildContext context, AppLocalizations l10n) {
     return Row(
@@ -134,53 +143,58 @@ class MemoryTestHubPage extends StatelessWidget {
               children: [
                 _topBar(context, l10n),
                 const SizedBox(height: Dimensions.verticalSpacingLarge),
-                _nativeTestCard(
-                  context: context,
-                  l10n: l10n,
-                  icon: Icons.image_outlined,
-                  accent: AppColorPalette.blueSteel,
-                  title: l10n.gamesImageMemoryTestTitle,
-                  subtitle: l10n.gamesImageMemoryTestSubtitle,
-                  onStart: () {
-                    Navigator.of(context).push(
-                      MaterialPageRoute<void>(
-                        builder: (_) => const MemoryCardGamePage(),
-                      ),
-                    );
-                  },
-                ),
-                const SizedBox(height: Dimensions.verticalSpacingRegular),
-                _nativeTestCard(
-                  context: context,
-                  l10n: l10n,
-                  icon: Icons.calendar_today_outlined,
-                  accent: AppColorPalette.emerald,
-                  title: l10n.gamesDailyRecallTestTitle,
-                  subtitle: l10n.gamesDailyRecallTestSubtitle,
-                  onStart: () {
-                    Navigator.of(context).push(
-                      MaterialPageRoute<void>(
-                        builder: (_) => const SequenceMemoryGamePage(),
-                      ),
-                    );
-                  },
-                ),
-                const SizedBox(height: Dimensions.verticalSpacingRegular),
-                _nativeTestCard(
-                  context: context,
-                  l10n: l10n,
-                  icon: Icons.calculate_outlined,
-                  accent: AppColorPalette.blueBright,
-                  title: l10n.gameMathTitle,
-                  subtitle: l10n.gameMathSubtitle,
-                  onStart: () {
-                    Navigator.of(context).push(
-                      MaterialPageRoute<void>(
-                        builder: (_) => const QuickMathGamePage(),
-                      ),
-                    );
-                  },
-                ),
+                if (showImageMemoryTest) ...[
+                  _nativeTestCard(
+                    context: context,
+                    l10n: l10n,
+                    icon: Icons.image_outlined,
+                    accent: AppColorPalette.blueSteel,
+                    title: l10n.gamesImageMemoryTestTitle,
+                    subtitle: l10n.gamesImageMemoryTestSubtitle,
+                    onStart: () {
+                      Navigator.of(context).push(
+                        MaterialPageRoute<void>(
+                          builder: (_) => const MemoryCardGamePage(),
+                        ),
+                      );
+                    },
+                  ),
+                  const SizedBox(height: Dimensions.verticalSpacingRegular),
+                ],
+                if (showDailyRecallTest) ...[
+                  _nativeTestCard(
+                    context: context,
+                    l10n: l10n,
+                    icon: Icons.calendar_today_outlined,
+                    accent: AppColorPalette.emerald,
+                    title: l10n.gamesDailyRecallTestTitle,
+                    subtitle: l10n.gamesDailyRecallTestSubtitle,
+                    onStart: () {
+                      Navigator.of(context).push(
+                        MaterialPageRoute<void>(
+                          builder: (_) => const SequenceMemoryGamePage(),
+                        ),
+                      );
+                    },
+                  ),
+                  const SizedBox(height: Dimensions.verticalSpacingRegular),
+                ],
+                if (showQuickMath)
+                  _nativeTestCard(
+                    context: context,
+                    l10n: l10n,
+                    icon: Icons.calculate_outlined,
+                    accent: AppColorPalette.blueBright,
+                    title: l10n.gameMathTitle,
+                    subtitle: l10n.gameMathSubtitle,
+                    onStart: () {
+                      Navigator.of(context).push(
+                        MaterialPageRoute<void>(
+                          builder: (_) => const QuickMathGamePage(),
+                        ),
+                      );
+                    },
+                  ),
                 const SizedBox(height: bottomNavigationBarPadding),
               ],
             ),

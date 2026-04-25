@@ -166,6 +166,10 @@ class _DoctorAddMedicinePageState extends State<DoctorAddMedicinePage> {
         frequency: _frequency,
         daysTotal: _daysTotal,
         caregiverInstructions: _instructionController.text.trim(),
+        lastDoseVerifiedBy: FirebaseAuth.instance.currentUser?.displayName?.trim().isNotEmpty ==
+                true
+            ? FirebaseAuth.instance.currentUser!.displayName!.trim()
+            : uid,
       );
       if (!mounted) return;
       Navigator.of(context).pop();

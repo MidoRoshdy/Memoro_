@@ -1,3 +1,4 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
 import '../../../../core/constants/dimensions.dart';
@@ -193,6 +194,11 @@ class _DoctorEditMedicinePageState extends State<DoctorEditMedicinePage> {
         daysTotal: days,
         caregiverInstructions: _instructionsController.text.trim(),
         status: _status,
+        lastDoseVerifiedBy:
+            FirebaseAuth.instance.currentUser?.displayName?.trim().isNotEmpty ==
+                true
+            ? FirebaseAuth.instance.currentUser!.displayName!.trim()
+            : (FirebaseAuth.instance.currentUser?.uid ?? ''),
       );
       if (!mounted) return;
       Navigator.of(context).pop();

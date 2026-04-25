@@ -83,6 +83,7 @@
   "tabHome": "الرئيسية",
   "tabChat": "الدردشة",
   "tabGames": "الألعاب",
+  "tabActivity": "الأنشطة",
   "tabMedicine": "الدواء",
   "tabProfile": "الملف الشخصي",
   "fabTapped": "تم الضغط على الزر العائم",
@@ -125,6 +126,7 @@
   "gameSequenceSubtitle": "شاهد الترتيب ثم أعده.",
   "gameMathTitle": "تحدي الرياضيات السريع",
   "gameMathSubtitle": "حل مسائل رياضية بسيطة بأسرع ما يمكن.",
+  "patientActivitySectionTitle": "الأنشطة",
   "restartTooltip": "إعادة التشغيل",
   "closeLabel": "إغلاق",
   "playAgainLabel": "العب مرة أخرى",
@@ -361,6 +363,14 @@
   "doctorStatusStable": "مستقر",
   "doctorPatientProgressTitle": "تقدم المريض",
   "doctorWellnessScoreLine": "درجة الرفاهية الإجمالية لهذا الأسبوع.",
+  "doctorProgressNoItemsYet": "لا توجد أدوية أو أنشطة مضافة بعد.",
+  "doctorProgressSummary": "اكتمل {done} من {total} من الأدوية والأنشطة.",
+  "@doctorProgressSummary": {
+    "placeholders": {
+      "done": {},
+      "total": {}
+    }
+  },
   "doctorWellnessPercent": "{percent}٪",
   "@doctorWellnessPercent": {
     "placeholders": {
@@ -402,6 +412,93 @@
     }
   },
   "doctorAssignActivity": "تعيين نشاط",
+  "doctorActivityNoActivitiesYet": "لا توجد أنشطة مضافة بعد.",
+  "doctorActivityTitleRequired": "عنوان النشاط مطلوب.",
+  "doctorActivityTitleLabel": "عنوان النشاط",
+  "doctorActivityTitleHint": "شرب الماء / مشي صباحي / تمارين تمدد",
+  "doctorActivityTypeLabel": "نوع النشاط",
+  "doctorActivityTypeWater": "ماء",
+  "doctorActivityTypeExercise": "تمرين",
+  "doctorActivityTypeBreathing": "تنفس",
+  "doctorActivityTypeOther": "أخرى",
+  "doctorActivityTargetLabel": "الهدف",
+  "doctorActivityTargetHint": "8 أكواب / 20 دقيقة / جلسة واحدة",
+  "doctorActivityTimeLabel": "الوقت: {time}",
+  "@doctorActivityTimeLabel": {
+    "placeholders": {
+      "time": {}
+    }
+  },
+  "doctorActivityInstructionsLabel": "التعليمات",
+  "doctorActivityInstructionsHint": "أي تفاصيل إضافية للمريض...",
+  "doctorActivityDoneButton": "تم",
+  "doctorActivityLatestWithTime": "{title} الساعة {time}",
+  "@doctorActivityLatestWithTime": {
+    "placeholders": {
+      "title": {},
+      "time": {}
+    }
+  },
+  "doctorActivityNoMissedNow": "لا توجد أنشطة فائتة حاليًا.",
+  "doctorActivityOverdueBy": "متأخر بمقدار {duration}",
+  "@doctorActivityOverdueBy": {
+    "placeholders": {
+      "duration": {}
+    }
+  },
+  "doctorActivityDurationHoursMinutes": "{hours}س {minutes}د",
+  "@doctorActivityDurationHoursMinutes": {
+    "placeholders": {
+      "hours": {},
+      "minutes": {}
+    }
+  },
+  "doctorActivityDurationMinutes": "{minutes}د",
+  "@doctorActivityDurationMinutes": {
+    "placeholders": {
+      "minutes": {}
+    }
+  },
+  "doctorActivityTotal": "إجمالي الأنشطة",
+  "doctorActivityTakenToday": "المكتمل اليوم",
+  "doctorActivityMissed": "الفائت",
+  "doctorActivityWeeklyProgress": "التقدم الأسبوعي",
+  "doctorActivityWeeklySubtitle": "الأنشطة المكتملة هذا الأسبوع. أنت على المسار الصحيح للهدف.",
+  "doctorActivityRecentResultTitle": "آخر نتيجة",
+  "doctorActivityRecentResultSubtitle": "تم تحقيق دقة عالية اليوم",
+  "doctorActivityAssignDetails": "تفاصيل التعيين",
+  "doctorActivityFinishedOnTime": "تم الانتهاء في الوقت المحدد",
+  "doctorActivityScoreLabel": "النتيجة",
+  "doctorActivityLevel": "المستوى",
+  "doctorActivityAssignedDate": "تاريخ التعيين",
+  "doctorActivityScheduledTime": "الوقت المحدد",
+  "doctorActivityDuration": "المدة",
+  "doctorActivityMinutesUnit": "دقيقة",
+  "doctorActivityAssignedBy": "تم التعيين بواسطة",
+  "doctorActivityPerformanceSummary": "ملخص الأداء",
+  "doctorActivityFinalScore": "النتيجة النهائية",
+  "doctorActivityTimeTaken": "الوقت المستغرق",
+  "doctorActivityCorrectMatches": "المطابقات الصحيحة",
+  "doctorActivityTotalAttempts": "إجمالي المحاولات",
+  "doctorActivityVisibleForPatient": "مرئي للمريض",
+  "doctorActivityEditActivity": "تعديل النشاط",
+  "doctorActivityCancelActivity": "إلغاء النشاط",
+  "doctorActivityStatusCancelled": "ملغي",
+  "doctorActivityAssignedGames": "الألعاب المعينة",
+  "doctorGamesShowMemory": "إظهار ألعاب الذاكرة",
+  "doctorGamesShowOnline": "إظهار الألعاب عبر الإنترنت",
+  "doctorGamesShowSudoku": "إظهار سودوكو",
+  "doctorGamesShowSimon": "إظهار سيمون يقول",
+  "doctorGamesTitleLabel": "عنوان اللعبة",
+  "doctorGamesTitleHint": "لغز 2048",
+  "doctorGamesUrlLabel": "رابط اللعبة",
+  "doctorGamesUrlHint": "https://...",
+  "doctorGamesAddLink": "إضافة رابط لعبة",
+  "doctorGamesRequiredFields": "يرجى إدخال عنوان اللعبة والرابط.",
+  "doctorGamesNoCustomLinks": "لا توجد روابط مخصصة بعد.",
+  "doctorGamesLinkAdded": "تمت إضافة رابط اللعبة.",
+  "doctorGamesHide": "إخفاء",
+  "doctorGamesShow": "إظهار",
   "doctorFamilyMembersTitle": "أفراد العائلة",
   "doctorManageFamily": "إدارة العائلة",
   "doctorPatientAgeRoom": "العمر {age} · الغرفة {room}",
@@ -447,6 +544,14 @@
   "doctorMedMissed": "فائت",
   "doctorMedTodaySchedule": "جدول اليوم",
   "doctorMedNoMedicationYet": "لا توجد أدوية بعد.",
+  "doctorMedNoMissedNow": "لا توجد أدوية فائتة حاليًا.",
+  "doctorMedLatestWithTime": "{title} الساعة {time}",
+  "@doctorMedLatestWithTime": {
+    "placeholders": {
+      "title": {},
+      "time": {}
+    }
+  },
   "doctorMedAllMedications": "كل الأدوية",
   "doctorMedAddMedication": "إضافة دواء",
   "doctorMedMedicationDetailsButton": "تفاصيل الأدوية",

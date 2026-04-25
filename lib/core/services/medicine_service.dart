@@ -95,6 +95,7 @@ abstract final class MedicineService {
     required int daysTotal,
     required String caregiverInstructions,
     String status = 'upcoming',
+    String lastDoseVerifiedBy = '',
   }) async {
     await ensureMedicineDocument(
       medicineDocId: medicineDocId,
@@ -102,6 +103,7 @@ abstract final class MedicineService {
       patientUid: patientUid,
     );
     final ref = _itemsRef(medicineDocId).doc();
+    final normalizedStatus = status.trim().toLowerCase();
     await ref.set(<String, dynamic>{
       'medicineItemId': ref.id,
       'name': name.trim(),
@@ -117,7 +119,13 @@ abstract final class MedicineService {
       'frequency': frequency.trim(),
       'daysTotal': daysTotal,
       'caregiverInstructions': caregiverInstructions.trim(),
-      'status': status.trim().toLowerCase(),
+      'status': normalizedStatus,
+      'lastDoseAt': normalizedStatus == 'taken'
+          ? FieldValue.serverTimestamp()
+          : null,
+      'lastDoseVerifiedBy': normalizedStatus == 'taken'
+          ? lastDoseVerifiedBy.trim()
+          : '',
       'createdByUid': createdByUid.trim(),
       'createdAt': FieldValue.serverTimestamp(),
       'updatedAt': FieldValue.serverTimestamp(),
@@ -143,8 +151,10 @@ abstract final class MedicineService {
     required int daysTotal,
     required String caregiverInstructions,
     required String status,
+    String lastDoseVerifiedBy = '',
   }) async {
-    await _itemsRef(medicineDocId).doc(medicineItemId).set(<String, dynamic>{
+    final normalizedStatus = status.trim().toLowerCase();
+    final updateData = <String, dynamic>{
       'name': name.trim(),
       'dosage': dosage.trim(),
       'intakeType': intakeType.trim(),
@@ -158,9 +168,17 @@ abstract final class MedicineService {
       'frequency': frequency.trim(),
       'daysTotal': daysTotal,
       'caregiverInstructions': caregiverInstructions.trim(),
-      'status': status.trim().toLowerCase(),
+      'status': normalizedStatus,
       'updatedAt': FieldValue.serverTimestamp(),
-    }, SetOptions(merge: true));
+    };
+    if (normalizedStatus == 'taken') {
+      updateData['lastDoseAt'] = FieldValue.serverTimestamp();
+      updateData['lastDoseVerifiedBy'] = lastDoseVerifiedBy.trim();
+    }
+    await _itemsRef(medicineDocId).doc(medicineItemId).set(
+      updateData,
+      SetOptions(merge: true),
+    );
     await medicineRef(medicineDocId).set(<String, dynamic>{
       'updatedAt': FieldValue.serverTimestamp(),
     }, SetOptions(merge: true));
