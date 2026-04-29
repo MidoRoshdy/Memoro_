@@ -3,7 +3,11 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 enum AppNotificationType {
   activityAssigned,
   activityDone,
+  chatMessage,
   helpRequest,
+  helpRequestResolved,
+  medicationAdded,
+  medicationTaken,
   medicationReminder,
   activityReminder,
   general,
@@ -14,6 +18,7 @@ enum AppNotificationPriority { normal, high }
 class AppNotification {
   const AppNotification({
     required this.id,
+    required this.rawType,
     required this.type,
     required this.title,
     required this.body,
@@ -34,6 +39,7 @@ class AppNotification {
   });
 
   final String id;
+  final String rawType;
   final AppNotificationType type;
   final String title;
   final String body;
@@ -64,6 +70,7 @@ class AppNotification {
   ) {
     return AppNotification(
       id: id,
+      rawType: (json['type'] as String?)?.trim() ?? 'general',
       type: _parseType((json['type'] as String?)?.trim()),
       title: (json['title'] as String?)?.trim() ?? '',
       body: (json['body'] as String?)?.trim() ?? '',
@@ -90,8 +97,16 @@ class AppNotification {
         return AppNotificationType.activityAssigned;
       case 'activity_done':
         return AppNotificationType.activityDone;
+      case 'chat_message':
+        return AppNotificationType.chatMessage;
       case 'help_request':
         return AppNotificationType.helpRequest;
+      case 'help_request_resolved':
+        return AppNotificationType.helpRequestResolved;
+      case 'medication_added':
+        return AppNotificationType.medicationAdded;
+      case 'medication_taken':
+        return AppNotificationType.medicationTaken;
       case 'medication_reminder':
         return AppNotificationType.medicationReminder;
       case 'activity_reminder':

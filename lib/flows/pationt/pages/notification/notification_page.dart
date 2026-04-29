@@ -221,8 +221,16 @@ class _NotificationPageState extends ConsumerState<NotificationPage> {
   Widget _iconForType(AppNotificationType type) {
     switch (type) {
       case AppNotificationType.medicationReminder:
+      case AppNotificationType.medicationAdded:
+      case AppNotificationType.medicationTaken:
         return Image.asset(AppAssets.medcineicon, fit: BoxFit.contain);
+      case AppNotificationType.chatMessage:
+        return const Icon(
+          Icons.chat_bubble_outline_rounded,
+          color: AppColorPalette.blueSteel,
+        );
       case AppNotificationType.helpRequest:
+      case AppNotificationType.helpRequestResolved:
         return const Icon(
           Icons.warning_amber_rounded,
           color: AppColorPalette.redDark,
@@ -246,7 +254,11 @@ class _NotificationPageState extends ConsumerState<NotificationPage> {
     switch (type) {
       case AppNotificationType.helpRequest:
         return const Color(0xFFFFF1F3);
+      case AppNotificationType.helpRequestResolved:
+        return const Color(0xFFE7F7EE);
       case AppNotificationType.medicationReminder:
+      case AppNotificationType.medicationAdded:
+      case AppNotificationType.medicationTaken:
         return const Color(0xFFE6F0FF);
       default:
         return const Color(0xFFEAF7FF);
@@ -268,8 +280,16 @@ class _NotificationPageState extends ConsumerState<NotificationPage> {
         return 'activity_assigned';
       case AppNotificationType.activityDone:
         return 'activity_done';
+      case AppNotificationType.chatMessage:
+        return 'chat_message';
       case AppNotificationType.helpRequest:
         return 'help_request';
+      case AppNotificationType.helpRequestResolved:
+        return 'help_request_resolved';
+      case AppNotificationType.medicationAdded:
+        return 'medication_added';
+      case AppNotificationType.medicationTaken:
+        return 'medication_taken';
       case AppNotificationType.medicationReminder:
         return 'medication_reminder';
       case AppNotificationType.activityReminder:

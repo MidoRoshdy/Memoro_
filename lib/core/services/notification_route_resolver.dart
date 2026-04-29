@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
 import '../../flows/doctor/pages/activity/doctor_activity_details_page.dart';
@@ -19,7 +20,9 @@ abstract final class NotificationRouteResolver {
     final entityId = (payload['entityId'] as String?)?.trim() ?? '';
     final data = _readData(payload);
 
-    if (type == 'activity_assigned' || type == 'activity_done') {
+    if (type == 'activity_assigned' ||
+        type == 'activity_done' ||
+        type == 'activity_reminder') {
       final doctorUid = (data['doctorUid'] as String?)?.trim() ?? '';
       final patientUid = (data['patientUid'] as String?)?.trim() ?? '';
       final patientName =
@@ -45,7 +48,9 @@ abstract final class NotificationRouteResolver {
       }
     }
 
-    if (type == 'medication_reminder') {
+    if (type == 'medication_reminder' ||
+        type == 'medication_added' ||
+        type == 'medication_taken') {
       if (pairId.isNotEmpty && entityId.isNotEmpty) {
         await Navigator.of(context).push(
           MaterialPageRoute<void>(
@@ -59,14 +64,16 @@ abstract final class NotificationRouteResolver {
       }
     }
 
-    if (type == 'help_request') {
+    if (type == 'help_request' || type == 'help_request_resolved') {
       await Navigator.of(context).pushNamed(AppRouter.notifications);
       return;
     }
 
     if (type == 'chat_message') {
       final chatId = (data['chatId'] as String?)?.trim() ?? pairId;
-      final currentUserId = (data['currentUserId'] as String?)?.trim() ?? '';
+      final currentUserId =
+          (data['currentUserId'] as String?)?.trim() ??
+          (FirebaseAuth.instance.currentUser?.uid ?? '');
       final title =
           (data['title'] as String?)?.trim().isNotEmpty == true
           ? (data['title'] as String).trim()
