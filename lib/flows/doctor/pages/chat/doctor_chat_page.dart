@@ -22,7 +22,9 @@ class _DoctorChatPageState extends State<DoctorChatPage> {
     if (value == null) return '--:--';
     final now = DateTime.now();
     final isToday =
-        value.year == now.year && value.month == now.month && value.day == now.day;
+        value.year == now.year &&
+        value.month == now.month &&
+        value.day == now.day;
     if (isToday) {
       return MaterialLocalizations.of(
         context,
@@ -190,13 +192,17 @@ class _DoctorChatPageState extends State<DoctorChatPage> {
             StreamBuilder<DoctorLinkStreamState>(
               stream: currentUserId.isEmpty
                   ? const Stream<DoctorLinkStreamState>.empty()
-                  : DoctorLinkRequestService.watchDoctorLinkUiState(currentUserId),
+                  : DoctorLinkRequestService.watchDoctorLinkUiState(
+                      currentUserId,
+                    ),
               builder: (context, snapshot) {
                 final requestData = snapshot.data?.requestData;
                 final patientUid =
                     (requestData?['patientUid'] as String?)?.trim() ?? '';
                 final patientName =
-                    (requestData?['patientName'] as String?)?.trim().isNotEmpty ==
+                    (requestData?['patientName'] as String?)
+                            ?.trim()
+                            .isNotEmpty ==
                         true
                     ? (requestData!['patientName'] as String).trim()
                     : 'Patient';

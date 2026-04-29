@@ -35,46 +35,40 @@ abstract final class ChatService {
       // While user is inside this chat, always hide unread badge.
       return 0;
     }
-    var mapValue = 0;
     final unreadCounts = chatData['unreadCounts'];
-    if (unreadCounts is Map) {
+    if (unreadCounts is Map && unreadCounts.containsKey(cleanUid)) {
       final raw = unreadCounts[cleanUid];
-      if (raw is num) {
-        mapValue = raw.toInt();
-      }
+      if (raw is num) return raw.toInt();
     }
+    // Fallback to legacy dotted field only when map does not have a value.
     final legacyRaw = chatData['unreadCounts.$cleanUid'];
-    final legacyValue = legacyRaw is num ? legacyRaw.toInt() : 0;
-    // Transitional behavior:
-    // - prefer map once non-zero
-    // - if map is zero but legacy still has value, use legacy.
-    if (mapValue > 0) return mapValue;
-    if (legacyValue > 0) return legacyValue;
-    return mapValue;
+    if (legacyRaw is num) return legacyRaw.toInt();
+    return 0;
   }
 
   static bool inChatForUser(Map<String, dynamic>? chatData, String uid) {
     final cleanUid = uid.trim();
     if (chatData == null || cleanUid.isEmpty) return false;
-    var mapValue = false;
+    // Map is the source of truth — if it has an entry for this user (even
+    // `false`), trust it and ignore any legacy dotted field which can be stale.
     final inChat = chatData['inChat'];
-    if (inChat is Map) {
+    if (inChat is Map && inChat.containsKey(cleanUid)) {
       final raw = inChat[cleanUid];
-      if (raw is bool) mapValue = raw;
+      if (raw is bool) return raw;
     }
+    // Fallback to legacy dotted field only when map does not have a value.
     final legacyRaw = chatData['inChat.$cleanUid'];
-    final legacyValue = legacyRaw is bool ? legacyRaw : false;
-    // Transitional behavior: true in either source means in-chat.
-    return mapValue || legacyValue;
+    if (legacyRaw is bool) return legacyRaw;
+    return false;
   }
 
-  /// Real-time unread count derived from the `messages` subcollection so it
-  /// always matches reality regardless of legacy/dotted fields in the chat doc.
+  /// Real-time unread count for [uid] read directly from the chat doc's
+  /// `unreadCounts` map. Map is the source of truth; legacy dotted field is
+  /// used only as a fallback when the map has no entry.
   ///
   /// Rules:
   /// - if `inChat[uid] == true` -> emits 0 (counter hidden while inside chat)
-  /// - else counts messages where `senderId != uid` and
-  ///   `createdAt > lastReadAt[uid]`.
+  /// - else emits `unreadCounts[uid]` from the chat doc.
   static Stream<int> watchUnreadCountFromMessages({
     required String chatId,
     required String uid,
@@ -84,45 +78,8 @@ abstract final class ChatService {
     if (cleanChatId.isEmpty || cleanUid.isEmpty) {
       return Stream<int>.value(0);
     }
-    return chatRef(cleanChatId).snapshots().asyncMap((chatSnap) async {
-      final data = chatSnap.data();
-      if (inChatForUser(data, cleanUid)) return 0;
-
-      DateTime? lastRead;
-      final lastReadMap = data?['lastReadAt'];
-      if (lastReadMap is Map) {
-        final raw = lastReadMap[cleanUid];
-        if (raw is Timestamp) {
-          lastRead = raw.toDate();
-        } else if (raw is DateTime) {
-          lastRead = raw;
-        }
-      }
-      final legacyRaw = data?['lastReadAt.$cleanUid'];
-      if (lastRead == null) {
-        if (legacyRaw is Timestamp) {
-          lastRead = legacyRaw.toDate();
-        } else if (legacyRaw is DateTime) {
-          lastRead = legacyRaw;
-        }
-      }
-
-      Query<Map<String, dynamic>> query = messagesRef(cleanChatId);
-      if (lastRead != null) {
-        query = query.where(
-          'createdAt',
-          isGreaterThan: Timestamp.fromDate(lastRead),
-        );
-      }
-      final snap = await query.get();
-      var count = 0;
-      for (final doc in snap.docs) {
-        final senderId = (doc.data()['senderId'] as String?)?.trim() ?? '';
-        if (senderId.isNotEmpty && senderId != cleanUid) {
-          count += 1;
-        }
-      }
-      return count;
+    return chatRef(cleanChatId).snapshots().map((chatSnap) {
+      return unreadCountForUser(chatSnap.data(), cleanUid);
     });
   }
 
