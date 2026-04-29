@@ -74,8 +74,7 @@ abstract final class NotificationRouteResolver {
       final currentUserId =
           (data['currentUserId'] as String?)?.trim() ??
           (FirebaseAuth.instance.currentUser?.uid ?? '');
-      final title =
-          (data['title'] as String?)?.trim().isNotEmpty == true
+      final title = (data['title'] as String?)?.trim().isNotEmpty == true
           ? (data['title'] as String).trim()
           : 'Chat';
       final avatarUrl = (data['avatarUrl'] as String?)?.trim() ?? '';

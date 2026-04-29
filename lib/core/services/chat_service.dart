@@ -31,27 +31,99 @@ abstract final class ChatService {
   static int unreadCountForUser(Map<String, dynamic>? chatData, String uid) {
     final cleanUid = uid.trim();
     if (chatData == null || cleanUid.isEmpty) return 0;
+    if (inChatForUser(chatData, cleanUid)) {
+      // While user is inside this chat, always hide unread badge.
+      return 0;
+    }
+    var mapValue = 0;
     final unreadCounts = chatData['unreadCounts'];
     if (unreadCounts is Map) {
       final raw = unreadCounts[cleanUid];
-      if (raw is num) return raw.toInt();
+      if (raw is num) {
+        mapValue = raw.toInt();
+      }
     }
     final legacyRaw = chatData['unreadCounts.$cleanUid'];
-    if (legacyRaw is num) return legacyRaw.toInt();
-    return 0;
+    final legacyValue = legacyRaw is num ? legacyRaw.toInt() : 0;
+    // Transitional behavior:
+    // - prefer map once non-zero
+    // - if map is zero but legacy still has value, use legacy.
+    if (mapValue > 0) return mapValue;
+    if (legacyValue > 0) return legacyValue;
+    return mapValue;
   }
 
   static bool inChatForUser(Map<String, dynamic>? chatData, String uid) {
     final cleanUid = uid.trim();
     if (chatData == null || cleanUid.isEmpty) return false;
+    var mapValue = false;
     final inChat = chatData['inChat'];
     if (inChat is Map) {
       final raw = inChat[cleanUid];
-      if (raw is bool) return raw;
+      if (raw is bool) mapValue = raw;
     }
     final legacyRaw = chatData['inChat.$cleanUid'];
-    if (legacyRaw is bool) return legacyRaw;
-    return false;
+    final legacyValue = legacyRaw is bool ? legacyRaw : false;
+    // Transitional behavior: true in either source means in-chat.
+    return mapValue || legacyValue;
+  }
+
+  /// Real-time unread count derived from the `messages` subcollection so it
+  /// always matches reality regardless of legacy/dotted fields in the chat doc.
+  ///
+  /// Rules:
+  /// - if `inChat[uid] == true` -> emits 0 (counter hidden while inside chat)
+  /// - else counts messages where `senderId != uid` and
+  ///   `createdAt > lastReadAt[uid]`.
+  static Stream<int> watchUnreadCountFromMessages({
+    required String chatId,
+    required String uid,
+  }) {
+    final cleanChatId = chatId.trim();
+    final cleanUid = uid.trim();
+    if (cleanChatId.isEmpty || cleanUid.isEmpty) {
+      return Stream<int>.value(0);
+    }
+    return chatRef(cleanChatId).snapshots().asyncMap((chatSnap) async {
+      final data = chatSnap.data();
+      if (inChatForUser(data, cleanUid)) return 0;
+
+      DateTime? lastRead;
+      final lastReadMap = data?['lastReadAt'];
+      if (lastReadMap is Map) {
+        final raw = lastReadMap[cleanUid];
+        if (raw is Timestamp) {
+          lastRead = raw.toDate();
+        } else if (raw is DateTime) {
+          lastRead = raw;
+        }
+      }
+      final legacyRaw = data?['lastReadAt.$cleanUid'];
+      if (lastRead == null) {
+        if (legacyRaw is Timestamp) {
+          lastRead = legacyRaw.toDate();
+        } else if (legacyRaw is DateTime) {
+          lastRead = legacyRaw;
+        }
+      }
+
+      Query<Map<String, dynamic>> query = messagesRef(cleanChatId);
+      if (lastRead != null) {
+        query = query.where(
+          'createdAt',
+          isGreaterThan: Timestamp.fromDate(lastRead),
+        );
+      }
+      final snap = await query.get();
+      var count = 0;
+      for (final doc in snap.docs) {
+        final senderId = (doc.data()['senderId'] as String?)?.trim() ?? '';
+        if (senderId.isNotEmpty && senderId != cleanUid) {
+          count += 1;
+        }
+      }
+      return count;
+    });
   }
 
   static Future<String> ensureChannelForDoctorPatient({
@@ -75,6 +147,8 @@ abstract final class ChatService {
       'patientImageUrl': patientImageUrl.trim(),
       'participantIds': participants,
       'inChat': <String, bool>{for (final id in participants) id: false},
+      'unreadCounts': <String, int>{for (final id in participants) id: 0},
+      'lastReadAt': <String, dynamic>{},
       if (requestId != null && requestId.trim().isNotEmpty)
         'requestId': requestId.trim(),
       'updatedAt': FieldValue.serverTimestamp(),
@@ -125,13 +199,16 @@ abstract final class ChatService {
         );
       }
 
-      final unreadUpdates = <String, dynamic>{};
+      final unreadMap = <String, dynamic>{};
+      for (final participantId in participants) {
+        unreadMap[participantId] = unreadCountForUser(chatData, participantId);
+      }
       for (final participantId in participants) {
         if (participantId == senderId.trim()) continue;
         final recipientInChat = inChatForUser(chatData, participantId);
-        unreadUpdates['unreadCounts.$participantId'] = recipientInChat
-            ? 0
-            : FieldValue.increment(1);
+        final currentUnread = unreadMap[participantId];
+        final currentValue = currentUnread is num ? currentUnread.toInt() : 0;
+        unreadMap[participantId] = recipientInChat ? 0 : currentValue + 1;
       }
 
       tx.set(msgRef, <String, dynamic>{
@@ -147,7 +224,7 @@ abstract final class ChatService {
         'lastMessageSenderId': senderId.trim(),
         'lastMessageAt': now,
         'updatedAt': now,
-        ...unreadUpdates,
+        'unreadCounts': unreadMap,
       }, SetOptions(merge: true));
     });
   }
@@ -204,6 +281,12 @@ abstract final class ChatService {
 
       final payload = <String, dynamic>{
         'inChat': inChatMap,
+        'inChatUpdatedAt': <String, dynamic>{
+          ...(data?['inChatUpdatedAt'] is Map
+              ? Map<String, dynamic>.from(data!['inChatUpdatedAt'] as Map)
+              : <String, dynamic>{}),
+          cleanUid: FieldValue.serverTimestamp(),
+        },
         'updatedAt': FieldValue.serverTimestamp(),
       };
       if (inChat) {

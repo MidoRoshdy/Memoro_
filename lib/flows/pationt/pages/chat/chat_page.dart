@@ -291,64 +291,70 @@ class _ChatPageState extends State<ChatPage> {
                     final lastMessageAt = lastMessageAtRaw is Timestamp
                         ? lastMessageAtRaw.toDate()
                         : null;
-                    final unreadCount = ChatService.unreadCountForUser(
-                      chatData,
-                      currentUserId,
-                    );
-                    return _chatTile(
-                      context: context,
-                      title: doctorName,
-                      subtitle: (lastMessage != null && lastMessage.isNotEmpty)
-                          ? lastMessage
-                          : l10n.chatCaregiverCardSubtitle,
-                      time: _formatChatTime(context, lastMessageAt),
-                      unreadCount: unreadCount,
-                      leading: Container(
-                        width: 74,
-                        height: 74,
-                        decoration: BoxDecoration(
-                          color: Colors.blueGrey.withValues(alpha: 0.16),
-                          shape: BoxShape.circle,
-                        ),
-                        child: doctorImageUrl.isNotEmpty
-                            ? ClipOval(
-                                child: Image.network(
-                                  doctorImageUrl,
-                                  fit: BoxFit.cover,
-                                  width: 74,
-                                  height: 74,
-                                ),
-                              )
-                            : const Icon(
-                                Icons.person,
-                                color: AppColorPalette.blueSteel,
-                                size: 38,
-                              ),
+                    return StreamBuilder<int>(
+                      stream: ChatService.watchUnreadCountFromMessages(
+                        chatId: chatId,
+                        uid: currentUserId,
                       ),
-                      onTap: () async {
-                        if (currentUserId.isEmpty || doctorId.isEmpty) {
-                          return;
-                        }
-                        final ensuredChatId =
-                            await ChatService.ensureChannelForDoctorPatient(
-                              doctorId: doctorId,
-                              patientUid: currentUserId,
-                              doctorName: doctorName,
-                              doctorImageUrl: doctorImageUrl,
-                              patientName: patientName,
-                              patientImageUrl: patientImageUrl,
-                              requestId: request?.id,
-                            );
-                        if (!context.mounted) return;
-                        Navigator.of(context).push(
-                          MaterialPageRoute<void>(
-                            builder: (_) => ChatConversationPage(
-                              chatId: ensuredChatId,
-                              currentUserId: currentUserId,
-                              title: doctorName,
-                              avatarUrl: doctorImageUrl,
+                      builder: (context, unreadSnapshot) {
+                        final unreadCount = unreadSnapshot.data ?? 0;
+                        return _chatTile(
+                          context: context,
+                          title: doctorName,
+                          subtitle:
+                              (lastMessage != null && lastMessage.isNotEmpty)
+                              ? lastMessage
+                              : l10n.chatCaregiverCardSubtitle,
+                          time: _formatChatTime(context, lastMessageAt),
+                          unreadCount: unreadCount,
+                          leading: Container(
+                            width: 74,
+                            height: 74,
+                            decoration: BoxDecoration(
+                              color: Colors.blueGrey.withValues(alpha: 0.16),
+                              shape: BoxShape.circle,
                             ),
+                            child: doctorImageUrl.isNotEmpty
+                                ? ClipOval(
+                                    child: Image.network(
+                                      doctorImageUrl,
+                                      fit: BoxFit.cover,
+                                      width: 74,
+                                      height: 74,
+                                    ),
+                                  )
+                                : const Icon(
+                                    Icons.person,
+                                    color: AppColorPalette.blueSteel,
+                                    size: 38,
+                                  ),
                           ),
+                          onTap: () async {
+                            if (currentUserId.isEmpty || doctorId.isEmpty) {
+                              return;
+                            }
+                            final ensuredChatId =
+                                await ChatService.ensureChannelForDoctorPatient(
+                                  doctorId: doctorId,
+                                  patientUid: currentUserId,
+                                  doctorName: doctorName,
+                                  doctorImageUrl: doctorImageUrl,
+                                  patientName: patientName,
+                                  patientImageUrl: patientImageUrl,
+                                  requestId: request?.id,
+                                );
+                            if (!context.mounted) return;
+                            Navigator.of(context).push(
+                              MaterialPageRoute<void>(
+                                builder: (_) => ChatConversationPage(
+                                  chatId: ensuredChatId,
+                                  currentUserId: currentUserId,
+                                  title: doctorName,
+                                  avatarUrl: doctorImageUrl,
+                                ),
+                              ),
+                            );
+                          },
                         );
                       },
                     );
