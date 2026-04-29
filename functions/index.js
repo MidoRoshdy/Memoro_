@@ -292,6 +292,18 @@ exports.onEmergencyRequestActive = onDocumentWritten(
     const patientUid = (after.patientUid || "").trim();
     if (!doctorUid || !patientUid) return;
 
+    const latitude =
+      typeof after.latitude === "number"
+        ? after.latitude
+        : Number.parseFloat(after.latitude);
+    const longitude =
+      typeof after.longitude === "number"
+        ? after.longitude
+        : Number.parseFloat(after.longitude);
+    const hasCoords = Number.isFinite(latitude) && Number.isFinite(longitude);
+    const mapsUrl = (after.mapsUrl || "").toString().trim();
+    const locationText = (after.locationText || "").toString().trim();
+
     await sendPushToUser({
       notificationId: notificationId([
         "help_request",
@@ -311,7 +323,13 @@ exports.onEmergencyRequestActive = onDocumentWritten(
       body: after.patientName
         ? `${after.patientName} needs help now`
         : "Patient needs help now",
-      data: { doctorUid, patientUid },
+      data: {
+        doctorUid,
+        patientUid,
+        ...(hasCoords ? { latitude: String(latitude), longitude: String(longitude) } : {}),
+        ...(mapsUrl ? { mapsUrl } : {}),
+        ...(locationText ? { locationText } : {}),
+      },
     });
   },
 );

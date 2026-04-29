@@ -2,11 +2,13 @@ import 'dart:convert';
 
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../../flows/doctor/pages/activity/doctor_activity_details_page.dart';
 import '../../flows/doctor/pages/medicine/doctor_medicine_details_page.dart';
 import '../../flows/shared/chat/chat_conversation_page.dart';
 import '../router/app_router.dart';
+import 'emergency_request_service.dart';
 
 abstract final class NotificationRouteResolver {
   NotificationRouteResolver._();
@@ -64,7 +66,19 @@ abstract final class NotificationRouteResolver {
       }
     }
 
-    if (type == 'help_request' || type == 'help_request_resolved') {
+    if (type == 'help_request') {
+      final opened = await _openHelpRequestLocation(
+        context: context,
+        payload: payload,
+        data: data,
+        pairId: pairId,
+      );
+      if (opened) return;
+      await Navigator.of(context).pushNamed(AppRouter.notifications);
+      return;
+    }
+
+    if (type == 'help_request_resolved') {
       await Navigator.of(context).pushNamed(AppRouter.notifications);
       return;
     }
@@ -113,5 +127,78 @@ abstract final class NotificationRouteResolver {
       }
     }
     return const <String, dynamic>{};
+  }
+
+  static Future<bool> _openHelpRequestLocation({
+    required BuildContext context,
+    required Map<String, dynamic> payload,
+    required Map<String, dynamic> data,
+    required String pairId,
+  }) async {
+    Uri? uri =
+        _buildLocationUriFromMap(payload) ?? _buildLocationUriFromMap(data);
+
+    if (uri == null && pairId.isNotEmpty) {
+      try {
+        final snap = await EmergencyRequestService.requestRef(pairId).get();
+        uri = _buildLocationUriFromMap(
+          snap.data() ?? const <String, dynamic>{},
+        );
+      } catch (_) {
+        uri = null;
+      }
+    }
+
+    if (uri == null) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('No location available for this SOS request'),
+          ),
+        );
+      }
+      return false;
+    }
+
+    try {
+      final launched = await launchUrl(
+        uri,
+        mode: LaunchMode.externalApplication,
+      );
+      if (!launched && context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Could not open location map')),
+        );
+        return false;
+      }
+      return launched;
+    } catch (_) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Could not open location map')),
+        );
+      }
+      return false;
+    }
+  }
+
+  static Uri? _buildLocationUriFromMap(Map<String, dynamic> source) {
+    final mapsUrl = (source['mapsUrl'] as String?)?.trim() ?? '';
+    if (mapsUrl.isNotEmpty) {
+      final parsed = Uri.tryParse(mapsUrl);
+      if (parsed != null) return parsed;
+    }
+    final lat = _asDouble(source['latitude']);
+    final lng = _asDouble(source['longitude']);
+    if (lat != null && lng != null) {
+      return Uri.parse('https://maps.google.com/?q=$lat,$lng');
+    }
+    return null;
+  }
+
+  static double? _asDouble(dynamic raw) {
+    if (raw is num) return raw.toDouble();
+    if (raw is String) return double.tryParse(raw.trim());
+    return null;
   }
 }

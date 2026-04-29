@@ -28,65 +28,73 @@ class AppNotificationsAction extends ConsumerWidget {
     final tooltip =
         AppLocalizations.of(context)?.notifScreenTitle ?? 'Notifications';
     final iconSize = (diameter * 0.52).clamp(20.0, 28.0);
-    final badgeSize = (diameter * 0.18).clamp(6.0, 8.0);
-    // Anchor to the centered icon box so the dot sits on the bell (not the
-    // square’s corner outside the circular white fill). Same math in RTL
-    // because the glyph does not mirror.
-    final center = diameter / 2;
-    final halfIcon = iconSize / 2;
-    final badgeLeft = center + halfIcon * 0.38 - badgeSize / 2;
-    final badgeTop = center - halfIcon * 0.52 - badgeSize / 2;
+    final badgeDiameter = (diameter * 0.42).clamp(16.0, 22.0);
+    final badgeFontSize = (badgeDiameter * 0.55).clamp(9.0, 12.0);
 
     return Tooltip(
       message: tooltip,
-      child: ClipOval(
-        child: Material(
-          color: Colors.white,
-          child: InkWell(
-            onTap: () =>
-                Navigator.of(context).pushNamed(AppRouter.notifications),
-            customBorder: const CircleBorder(),
-            child: SizedBox(
-              width: diameter,
-              height: diameter,
-              child: Stack(
-                clipBehavior: Clip.none,
-                alignment: Alignment.center,
-                children: [
-                  Icon(
-                    Icons.notifications_none_rounded,
-                    color: AppColorPalette.blueSteel,
-                    size: iconSize,
-                  ),
-                  if (unread > 0)
-                    Positioned(
-                      left: badgeLeft,
-                      top: badgeTop,
-                      child: Container(
-                        constraints: BoxConstraints(
-                          minWidth: badgeSize * 2.1,
-                          minHeight: badgeSize * 2.1,
-                        ),
-                        padding: const EdgeInsets.symmetric(horizontal: 3),
-                        alignment: Alignment.center,
-                        decoration: const BoxDecoration(
-                          color: Colors.red,
-                          shape: BoxShape.circle,
-                        ),
-                        child: Text(
-                          unread > 99 ? '99+' : '$unread',
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 8,
-                            fontWeight: FontWeight.w700,
-                          ),
-                        ),
-                      ),
+      child: SizedBox(
+        width: diameter,
+        height: diameter,
+        child: Stack(
+          clipBehavior: Clip.none,
+          children: [
+            Material(
+              color: Colors.white,
+              shape: const CircleBorder(),
+              clipBehavior: Clip.antiAlias,
+              child: InkWell(
+                onTap: () =>
+                    Navigator.of(context).pushNamed(AppRouter.notifications),
+                customBorder: const CircleBorder(),
+                child: SizedBox(
+                  width: diameter,
+                  height: diameter,
+                  child: Center(
+                    child: Icon(
+                      Icons.notifications_none_rounded,
+                      color: AppColorPalette.blueSteel,
+                      size: iconSize,
                     ),
-                ],
+                  ),
+                ),
               ),
             ),
-          ),
+            if (unread > 0)
+              Positioned(
+                right: -badgeDiameter * 0.35,
+                top: -badgeDiameter * 0.35,
+                child: IgnorePointer(
+                  child: Container(
+                    constraints: BoxConstraints(
+                      minWidth: badgeDiameter,
+                      minHeight: badgeDiameter,
+                    ),
+                    padding: EdgeInsets.symmetric(
+                      horizontal: badgeDiameter * 0.25,
+                    ),
+                    alignment: Alignment.center,
+                    decoration: BoxDecoration(
+                      color: Colors.red,
+                      shape: unread > 9 ? BoxShape.rectangle : BoxShape.circle,
+                      borderRadius: unread > 9
+                          ? BorderRadius.circular(badgeDiameter)
+                          : null,
+                      border: Border.all(color: Colors.white, width: 1.5),
+                    ),
+                    child: Text(
+                      unread > 99 ? '99+' : '$unread',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: badgeFontSize,
+                        fontWeight: FontWeight.w700,
+                        height: 1.0,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+          ],
         ),
       ),
     );

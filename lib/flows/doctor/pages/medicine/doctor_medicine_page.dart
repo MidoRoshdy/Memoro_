@@ -143,16 +143,22 @@ class DoctorMedicinePage extends StatelessWidget {
     final l10n = AppLocalizations.of(context)!;
     final dotColor = item.isTaken
         ? AppColorPalette.emerald
-        : (item.isMissed ? AppColorPalette.redBright : AppColorPalette.blueSteel);
+        : (item.isMissed
+              ? AppColorPalette.redBright
+              : AppColorPalette.blueSteel);
     final status = item.isTaken
         ? l10n.doctorMedStatusTaken
-        : (item.isMissed ? l10n.doctorMedStatusMissed : l10n.doctorMedStatusUpcoming);
+        : (item.isMissed
+              ? l10n.doctorMedStatusMissed
+              : l10n.doctorMedStatusUpcoming);
     final badgeBg = item.isTaken
         ? const Color(0xFFE5F4EA)
         : (item.isMissed ? const Color(0xFFFDE6E6) : const Color(0xFFE2EEF7));
     final badgeFg = item.isTaken
         ? AppColorPalette.emerald
-        : (item.isMissed ? AppColorPalette.redBright : AppColorPalette.blueSteel);
+        : (item.isMissed
+              ? AppColorPalette.redBright
+              : AppColorPalette.blueSteel);
 
     return InkWell(
       onTap: onTap,
@@ -172,7 +178,10 @@ class DoctorMedicinePage extends StatelessWidget {
             Container(
               width: 26,
               height: 26,
-              decoration: BoxDecoration(color: dotColor, shape: BoxShape.circle),
+              decoration: BoxDecoration(
+                color: dotColor,
+                shape: BoxShape.circle,
+              ),
               child: Icon(
                 item.isTaken
                     ? Icons.check_rounded
@@ -189,16 +198,18 @@ class DoctorMedicinePage extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    item.name.isEmpty ? l10n.doctorMedTitleMedication : item.name,
+                    item.name.isEmpty
+                        ? l10n.doctorMedTitleMedication
+                        : item.name,
                     style: Theme.of(context).textTheme.titleSmall?.copyWith(
                       fontWeight: FontWeight.w800,
                     ),
                   ),
                   Text(
-                  '${item.primaryTime}${item.secondaryTime.isNotEmpty ? ' & ${item.secondaryTime}' : ''}${item.thirdTime.isNotEmpty ? ' & ${item.thirdTime}' : ''}  .  ${item.formattedDose}',
-                    style: Theme.of(
-                      context,
-                    ).textTheme.bodySmall?.copyWith(color: AppColorPalette.grey),
+                    '${item.primaryTime}${item.secondaryTime.isNotEmpty ? ' & ${item.secondaryTime}' : ''}${item.thirdTime.isNotEmpty ? ' & ${item.thirdTime}' : ''}  .  ${item.formattedDose}',
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: AppColorPalette.grey,
+                    ),
                   ),
                 ],
               ),
@@ -249,26 +260,28 @@ class DoctorMedicinePage extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    item.name.isEmpty ? l10n.doctorMedTitleMedication : item.name,
+                    item.name.isEmpty
+                        ? l10n.doctorMedTitleMedication
+                        : item.name,
                     style: Theme.of(context).textTheme.titleSmall?.copyWith(
                       fontWeight: FontWeight.w800,
                     ),
                   ),
                   const SizedBox(height: 2),
                   Text(
-                  item.formattedDose.isEmpty
+                    item.formattedDose.isEmpty
                         ? item.frequency
                         : '${item.formattedDose}  .  ${item.frequency}',
-                    style: Theme.of(
-                      context,
-                    ).textTheme.bodySmall?.copyWith(color: AppColorPalette.grey),
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: AppColorPalette.grey,
+                    ),
                   ),
                   const SizedBox(height: 2),
                   Text(
-                  l10n.doctorMedNextAt(item.primaryTime),
-                    style: Theme.of(
-                      context,
-                    ).textTheme.bodySmall?.copyWith(color: AppColorPalette.grey),
+                    l10n.doctorMedNextAt(item.primaryTime),
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: AppColorPalette.grey,
+                    ),
                   ),
                 ],
               ),
@@ -306,8 +319,10 @@ class DoctorMedicinePage extends StatelessWidget {
                   )
                 : null;
             final linkedData = acceptedDoc?.data();
-            final doctorUid = (linkedData?['doctorId'] as String?)?.trim() ?? currentUid;
-            final patientUid = (linkedData?['patientUid'] as String?)?.trim() ?? '';
+            final doctorUid =
+                (linkedData?['doctorId'] as String?)?.trim() ?? currentUid;
+            final patientUid =
+                (linkedData?['patientUid'] as String?)?.trim() ?? '';
             if (patientUid.isEmpty) {
               return Center(
                 child: Text(
@@ -346,6 +361,7 @@ class DoctorMedicinePage extends StatelessWidget {
                     ),
                   );
                 }
+
                 return SingleChildScrollView(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -356,12 +372,13 @@ class DoctorMedicinePage extends StatelessWidget {
                           Expanded(
                             child: Text(
                               l10n.doctorMedTitleMedication,
-                              
+
                               textAlign: TextAlign.center,
-                              style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                                color: Colors.white,
-                                fontWeight: FontWeight.w700,
-                              ),
+                              style: Theme.of(context).textTheme.titleLarge
+                                  ?.copyWith(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.w700,
+                                  ),
                             ),
                           ),
                           Container(
@@ -394,17 +411,12 @@ class DoctorMedicinePage extends StatelessWidget {
                         ],
                       ),
                       const SizedBox(height: Dimensions.verticalSpacingRegular),
-                      _alertCard(
-                        context,
-                        l10n,
-                        missedCount,
-                        () {
-                          final missed = meds.where((m) => m.isMissed).toList();
-                          if (missed.isNotEmpty) {
-                            openMedicineDetails(missed.first);
-                          }
-                        },
-                      ),
+                      _alertCard(context, l10n, missedCount, () {
+                        final missed = meds.where((m) => m.isMissed).toList();
+                        if (missed.isNotEmpty) {
+                          openMedicineDetails(missed.first);
+                        }
+                      }),
                       const SizedBox(height: Dimensions.verticalSpacingRegular),
                       _statCard(
                         context,
@@ -441,13 +453,14 @@ class DoctorMedicinePage extends StatelessWidget {
                       if (scheduleItems.isEmpty)
                         Container(
                           width: double.infinity,
-                          padding: const EdgeInsets.all(Dimensions.verticalSpacingRegular),
+                          padding: const EdgeInsets.all(
+                            Dimensions.verticalSpacingRegular,
+                          ),
                           decoration: BoxDecoration(
                             color: Colors.white.withValues(alpha: 0.94),
                             borderRadius: BorderRadius.circular(12),
                           ),
                           child: Text(l10n.doctorMedNoMedicationYet),
-                          
                         ),
                       for (final item in scheduleItems)
                         _scheduleTile(
@@ -460,18 +473,20 @@ class DoctorMedicinePage extends StatelessWidget {
                         children: [
                           Text(
                             l10n.doctorMedAllMedications,
-                            style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                              color: Colors.white,
-                              fontWeight: FontWeight.w800,
-                            ),
+                            style: Theme.of(context).textTheme.titleLarge
+                                ?.copyWith(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.w800,
+                                ),
                           ),
                           const Spacer(),
                           Text(
                             l10n.quickActionViewAll,
-                            style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                              color: const Color(0xFF7A3253),
-                              fontWeight: FontWeight.w700,
-                            ),
+                            style: Theme.of(context).textTheme.titleSmall
+                                ?.copyWith(
+                                  color: const Color(0xFF7A3253),
+                                  fontWeight: FontWeight.w700,
+                                ),
                           ),
                         ],
                       ),
@@ -519,7 +534,9 @@ class DoctorMedicinePage extends StatelessWidget {
                         child: ElevatedButton(
                           onPressed: () {},
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.white.withValues(alpha: 0.92),
+                            backgroundColor: Colors.white.withValues(
+                              alpha: 0.92,
+                            ),
                             foregroundColor: AppColorPalette.blueSteel,
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(12),
