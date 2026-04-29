@@ -168,6 +168,7 @@ abstract final class DoctorLinkRequestService {
     final doctorName = (cg?['name'] as String?)?.trim().isNotEmpty == true
         ? (cg!['name'] as String).trim()
         : (user.displayName?.trim() ?? '');
+    final doctorPhone = (cg?['phone'] as String?)?.trim() ?? '';
     final doctorGender = (cg?['gender'] as String?)?.trim() ?? '';
     final doctorImageUrl =
         (cg?['imageUrl'] as String?)?.trim().isNotEmpty == true
@@ -180,6 +181,7 @@ abstract final class DoctorLinkRequestService {
     final ref = await _requests().add(<String, dynamic>{
       'doctorId': uid,
       'doctorName': doctorName,
+      'doctorPhone': doctorPhone,
       'doctorImageUrl': doctorImageUrl,
       'doctorGender': doctorGender,
       'patientUid': patient.uid,

@@ -27,6 +27,10 @@ class RegisterPage extends StatefulWidget {
 }
 
 class _RegisterPageState extends State<RegisterPage> {
+  static final RegExp _emailRegex = RegExp(
+    r'^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$',
+  );
+
   Color get _roleColor => widget.role == AuthFlowRole.patient
       ? AppColorPalette.blueSteel
       : AppColorPalette.emerald;
@@ -85,13 +89,55 @@ class _RegisterPageState extends State<RegisterPage> {
   bool get _registerFormComplete {
     if (_nameController.text.trim().isEmpty) return false;
     if (_emailController.text.trim().isEmpty) return false;
-    if (_phoneController.text.trim().isEmpty) return false;
+    if (!_emailRegex.hasMatch(_emailController.text.trim())) return false;
+    if (_phoneCompleteNumber.trim().isEmpty &&
+        _phoneController.text.trim().isEmpty) {
+      return false;
+    }
     if (_gender == null) return false;
     final age = int.tryParse(_ageController.text.trim());
     if (age == null || age < 1 || age > 120) return false;
     if (_passwordController.text.trim().length < 6) return false;
     if (!_termsAccepted) return false;
     return true;
+  }
+
+  bool get _emailValid => _emailRegex.hasMatch(_emailController.text.trim());
+  bool get _phoneValid =>
+      _phoneCompleteNumber.trim().isNotEmpty ||
+      _phoneController.text.trim().isNotEmpty;
+  bool get _ageValid {
+    final age = int.tryParse(_ageController.text.trim());
+    return age != null && age >= 1 && age <= 120;
+  }
+
+  bool get _passwordValid => _passwordController.text.trim().length >= 6;
+
+  Widget _validationHint({
+    required BuildContext context,
+    required bool isValid,
+    required String validMessage,
+    required String invalidMessage,
+  }) {
+    return Row(
+      children: [
+        Icon(
+          isValid ? Icons.check_circle : Icons.cancel,
+          size: 16,
+          color: isValid ? AppColorPalette.authLink : AppColorPalette.redBright,
+        ),
+        const SizedBox(width: 6),
+        Text(
+          isValid ? validMessage : invalidMessage,
+          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+            color: isValid
+                ? AppColorPalette.authLink
+                : AppColorPalette.redBright,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+      ],
+    );
   }
 
   String _registerAuthErrorMessage(AppLocalizations l10n, String code) {
@@ -176,7 +222,20 @@ class _RegisterPageState extends State<RegisterPage> {
 
   Future<void> _onRegister() async {
     final l10n = AppLocalizations.of(context)!;
-    if (_phoneController.text.trim().isEmpty) {
+    if (_nameController.text.trim().isEmpty) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(l10n.fieldHintName)));
+      return;
+    }
+    if (!_emailRegex.hasMatch(_emailController.text.trim())) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(l10n.registerErrorInvalidEmail)));
+      return;
+    }
+    if (_phoneCompleteNumber.trim().isEmpty &&
+        _phoneController.text.trim().isEmpty) {
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(SnackBar(content: Text(l10n.phoneRequired)));
@@ -403,6 +462,15 @@ class _RegisterPageState extends State<RegisterPage> {
                               textInputAction: TextInputAction.next,
                               autofillHints: const [AutofillHints.email],
                             ),
+                            if (_emailController.text.trim().isNotEmpty) ...[
+                              const SizedBox(height: 6),
+                              _validationHint(
+                                context: context,
+                                isValid: _emailValid,
+                                validMessage: 'Email looks good',
+                                invalidMessage: 'Invalid email format',
+                              ),
+                            ],
                             mediumVerticalSpace,
                             Text(l10n.phoneHint, style: labelAboveStyle),
                             shortVerticalSpace,
@@ -432,6 +500,10 @@ class _RegisterPageState extends State<RegisterPage> {
                                 });
                               },
                             ),
+                            if (_phoneController.text.trim().isNotEmpty ||
+                                _phoneCompleteNumber.trim().isNotEmpty) ...[
+                              const SizedBox(height: 6),
+                            ],
                             mediumVerticalSpace,
                             Text(l10n.genderLabel, style: labelAboveStyle),
                             shortVerticalSpace,
@@ -484,6 +556,13 @@ class _RegisterPageState extends State<RegisterPage> {
                                 ),
                               ),
                             ),
+                            const SizedBox(height: 6),
+                            _validationHint(
+                              context: context,
+                              isValid: _gender != null,
+                              validMessage: 'Gender selected',
+                              invalidMessage: 'Please select gender',
+                            ),
                             mediumVerticalSpace,
                             AppTextField(
                               controller: _ageController,
@@ -496,6 +575,9 @@ class _RegisterPageState extends State<RegisterPage> {
                               textInputAction: TextInputAction.next,
                               autofillHints: const [AutofillHints.birthdayYear],
                             ),
+                            if (_ageController.text.trim().isNotEmpty) ...[
+                              const SizedBox(height: 6),
+                            ],
                             mediumVerticalSpace,
                             AppTextField(
                               controller: _passwordController,
@@ -508,6 +590,16 @@ class _RegisterPageState extends State<RegisterPage> {
                               textInputAction: TextInputAction.next,
                               autofillHints: const [AutofillHints.newPassword],
                             ),
+                            if (_passwordController.text.trim().isNotEmpty) ...[
+                              const SizedBox(height: 6),
+                              _validationHint(
+                                context: context,
+                                isValid: _passwordValid,
+                                validMessage: 'Password length is valid',
+                                invalidMessage:
+                                    'Password must be at least 6 characters',
+                              ),
+                            ],
                             mediumVerticalSpace,
                             Text(
                               l10n.profilePhotoLabel,
@@ -651,6 +743,7 @@ class _RegisterPageState extends State<RegisterPage> {
                                 ),
                               ],
                             ),
+                            const SizedBox(height: 6),
 
                             PrimaryButton(
                               label: _loading

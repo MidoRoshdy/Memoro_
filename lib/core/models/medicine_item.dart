@@ -37,7 +37,17 @@ class MedicineItem {
   final String createdByUid;
   final DateTime? createdAt;
 
-  bool get isTaken => status == 'taken';
+  bool get isTaken {
+    if (status != 'taken') return false;
+    final doseAt = lastDoseAt;
+    if (doseAt == null) return false;
+    final localDoseAt = doseAt.toLocal();
+    final now = DateTime.now();
+    return now.year == localDoseAt.year &&
+        now.month == localDoseAt.month &&
+        now.day == localDoseAt.day;
+  }
+
   bool get isMissed => status == 'missed';
   bool get isUpcoming => status == 'upcoming';
   String get primaryTime =>

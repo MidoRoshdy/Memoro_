@@ -34,11 +34,23 @@ class _ChatConversationPageState extends State<ChatConversationPage> {
 
   bool _sending = false;
   bool _resettingUnread = false;
+  bool _inChatMarked = false;
 
   @override
   void initState() {
     super.initState();
+    _markInChat(true);
     _resetUnread();
+  }
+
+  Future<void> _markInChat(bool inChat) async {
+    if (_inChatMarked == inChat) return;
+    _inChatMarked = inChat;
+    await ChatService.setInChatPresence(
+      chatId: widget.chatId,
+      uid: widget.currentUserId,
+      inChat: inChat,
+    );
   }
 
   Future<void> _resetUnread() async {
@@ -56,6 +68,7 @@ class _ChatConversationPageState extends State<ChatConversationPage> {
 
   @override
   void dispose() {
+    _markInChat(false);
     _messageController.dispose();
     _scrollController.dispose();
     super.dispose();
@@ -197,7 +210,12 @@ class _ChatConversationPageState extends State<ChatConversationPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return WillPopScope(
+      onWillPop: () async {
+        await _markInChat(false);
+        return true;
+      },
+      child: Scaffold(
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
@@ -372,6 +390,7 @@ class _ChatConversationPageState extends State<ChatConversationPage> {
           ),
         ],
       ),
+    ),
     );
   }
 }

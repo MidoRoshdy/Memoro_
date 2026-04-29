@@ -1,7 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../../../../core/constants/dimensions.dart';
 import '../../../../core/localization/locale_controller.dart';
+import '../../../../core/services/local_notification_service.dart';
+import '../../../../core/services/notification_inbox_service.dart';
 import '../../../../core/theme/app_color_palette.dart';
 import '../../../../l10n/app_localizations.dart';
 import '../../widgets/language_picker_sheet.dart';
@@ -14,8 +19,97 @@ class SettingsPage extends StatefulWidget {
 }
 
 class _SettingsPageState extends State<SettingsPage> {
+  static const String _notificationsEnabledKey =
+      'settings_notifications_enabled';
+  static const String _soundEnabledKey = 'settings_sound_enabled';
+  static const String _supportEmail = 'support@memoro.app';
+
   bool _notificationsEnabled = true;
   bool _soundEnabled = false;
+  bool _loadingPrefs = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadPreferences();
+  }
+
+  Future<void> _loadPreferences() async {
+    final prefs = await SharedPreferences.getInstance();
+    if (!mounted) return;
+    setState(() {
+      _notificationsEnabled = prefs.getBool(_notificationsEnabledKey) ?? true;
+      _soundEnabled = prefs.getBool(_soundEnabledKey) ?? false;
+      _loadingPrefs = false;
+    });
+  }
+
+  Future<void> _toggleNotifications(bool enabled) async {
+    final l10n = AppLocalizations.of(context)!;
+    final prefs = await SharedPreferences.getInstance();
+    if (enabled) {
+      final granted = await NotificationInboxService.requestPermissions();
+      if (!granted) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Notification permission denied')),
+        );
+        setState(() => _notificationsEnabled = false);
+        await prefs.setBool(_notificationsEnabledKey, false);
+        return;
+      }
+      await NotificationInboxService.registerCurrentDeviceWithRetry();
+    } else {
+      await LocalNotificationService.cancelAll();
+    }
+    await prefs.setBool(_notificationsEnabledKey, enabled);
+    if (!mounted) return;
+    setState(() => _notificationsEnabled = enabled);
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          enabled
+              ? l10n.settingsNotificationsTitle
+              : '${l10n.settingsNotificationsTitle} OFF',
+        ),
+      ),
+    );
+  }
+
+  Future<void> _toggleSound(bool enabled) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(_soundEnabledKey, enabled);
+    if (!mounted) return;
+    setState(() => _soundEnabled = enabled);
+  }
+
+  Future<void> _contactSupport() async {
+    final mailUri = Uri(
+      scheme: 'mailto',
+      path: _supportEmail,
+      queryParameters: <String, String>{'subject': 'Memoro Support'},
+    );
+    final launchedMail = await launchUrl(
+      mailUri,
+      mode: LaunchMode.externalApplication,
+    );
+    if (launchedMail) return;
+
+    final webFallbackUri = Uri.parse(
+      'https://mail.google.com/mail/?view=cm&fs=1&to=$_supportEmail&su=Memoro%20Support',
+    );
+    final launchedWeb = await launchUrl(
+      webFallbackUri,
+      mode: LaunchMode.externalApplication,
+    );
+    if (launchedWeb || !mounted) return;
+
+    await Clipboard.setData(const ClipboardData(text: _supportEmail));
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Support email copied: $_supportEmail')),
+    );
+  }
 
   Widget _item({
     required BuildContext context,
@@ -67,6 +161,9 @@ class _SettingsPageState extends State<SettingsPage> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
+    if (_loadingPrefs) {
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+    }
     return Scaffold(
       body: SafeArea(
         child: Padding(
@@ -132,7 +229,7 @@ class _SettingsPageState extends State<SettingsPage> {
                 subtitle: l10n.settingsNotificationsSubtitle,
                 trailing: Switch(
                   value: _notificationsEnabled,
-                  onChanged: (v) => setState(() => _notificationsEnabled = v),
+                  onChanged: _toggleNotifications,
                   activeThumbColor: AppColorPalette.blueSteel,
                 ),
               ),
@@ -145,7 +242,7 @@ class _SettingsPageState extends State<SettingsPage> {
                 subtitle: l10n.settingsSoundSubtitle,
                 trailing: Switch(
                   value: _soundEnabled,
-                  onChanged: (v) => setState(() => _soundEnabled = v),
+                  onChanged: _toggleSound,
                   activeThumbColor: AppColorPalette.blueSteel,
                 ),
               ),
@@ -187,7 +284,7 @@ class _SettingsPageState extends State<SettingsPage> {
                       width: double.infinity,
                       height: 46,
                       child: ElevatedButton(
-                        onPressed: () {},
+                        onPressed: _contactSupport,
                         style: ElevatedButton.styleFrom(
                           backgroundColor: AppColorPalette.blueSteel,
                           foregroundColor: Colors.white,

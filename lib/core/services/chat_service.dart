@@ -28,10 +28,7 @@ abstract final class ChatService {
     return chatRef(chatId).collection(messagesSubcollection);
   }
 
-  static int unreadCountForUser(
-    Map<String, dynamic>? chatData,
-    String uid,
-  ) {
+  static int unreadCountForUser(Map<String, dynamic>? chatData, String uid) {
     final cleanUid = uid.trim();
     if (chatData == null || cleanUid.isEmpty) return 0;
     final unreadCounts = chatData['unreadCounts'];
@@ -39,7 +36,22 @@ abstract final class ChatService {
       final raw = unreadCounts[cleanUid];
       if (raw is num) return raw.toInt();
     }
+    final legacyRaw = chatData['unreadCounts.$cleanUid'];
+    if (legacyRaw is num) return legacyRaw.toInt();
     return 0;
+  }
+
+  static bool inChatForUser(Map<String, dynamic>? chatData, String uid) {
+    final cleanUid = uid.trim();
+    if (chatData == null || cleanUid.isEmpty) return false;
+    final inChat = chatData['inChat'];
+    if (inChat is Map) {
+      final raw = inChat[cleanUid];
+      if (raw is bool) return raw;
+    }
+    final legacyRaw = chatData['inChat.$cleanUid'];
+    if (legacyRaw is bool) return legacyRaw;
+    return false;
   }
 
   static Future<String> ensureChannelForDoctorPatient({
@@ -62,6 +74,7 @@ abstract final class ChatService {
       'patientName': patientName.trim(),
       'patientImageUrl': patientImageUrl.trim(),
       'participantIds': participants,
+      'inChat': <String, bool>{for (final id in participants) id: false},
       if (requestId != null && requestId.trim().isNotEmpty)
         'requestId': requestId.trim(),
       'updatedAt': FieldValue.serverTimestamp(),
@@ -76,7 +89,10 @@ abstract final class ChatService {
         .snapshots()
         .map(
           (snap) => snap.docs
-              .map((d) => ChatMessage.fromFirestore(d.id, d.data(), chatId: chatId))
+              .map(
+                (d) =>
+                    ChatMessage.fromFirestore(d.id, d.data(), chatId: chatId),
+              )
               .toList(),
         );
   }
@@ -105,17 +121,17 @@ abstract final class ChatService {
 
       if (participants.isEmpty) {
         participants.addAll(
-          chatId
-              .split('_')
-              .map((id) => id.trim())
-              .where((id) => id.isNotEmpty),
+          chatId.split('_').map((id) => id.trim()).where((id) => id.isNotEmpty),
         );
       }
 
       final unreadUpdates = <String, dynamic>{};
       for (final participantId in participants) {
         if (participantId == senderId.trim()) continue;
-        unreadUpdates['unreadCounts.$participantId'] = FieldValue.increment(1);
+        final recipientInChat = inChatForUser(chatData, participantId);
+        unreadUpdates['unreadCounts.$participantId'] = recipientInChat
+            ? 0
+            : FieldValue.increment(1);
       }
 
       tx.set(msgRef, <String, dynamic>{
@@ -148,11 +164,65 @@ abstract final class ChatService {
       final data = snap.data();
       final current = unreadCountForUser(data, cleanUid);
       if (current <= 0) return;
+      final unreadMap = <String, dynamic>{
+        ...(data?['unreadCounts'] is Map
+            ? Map<String, dynamic>.from(data!['unreadCounts'] as Map)
+            : <String, dynamic>{}),
+      };
+      unreadMap[cleanUid] = 0;
+      final lastReadMap = <String, dynamic>{
+        ...(data?['lastReadAt'] is Map
+            ? Map<String, dynamic>.from(data!['lastReadAt'] as Map)
+            : <String, dynamic>{}),
+      };
+      lastReadMap[cleanUid] = FieldValue.serverTimestamp();
       tx.set(ref, <String, dynamic>{
-        'unreadCounts.$cleanUid': 0,
-        'lastReadAt.$cleanUid': FieldValue.serverTimestamp(),
+        'unreadCounts': unreadMap,
+        'lastReadAt': lastReadMap,
         'updatedAt': FieldValue.serverTimestamp(),
       }, SetOptions(merge: true));
+    });
+  }
+
+  static Future<void> setInChatPresence({
+    required String chatId,
+    required String uid,
+    required bool inChat,
+  }) async {
+    final cleanUid = uid.trim();
+    if (cleanUid.isEmpty) return;
+    final ref = chatRef(chatId);
+    await _db.runTransaction((tx) async {
+      final snap = await tx.get(ref);
+      final data = snap.data();
+      final inChatMap = <String, dynamic>{
+        ...(data?['inChat'] is Map
+            ? Map<String, dynamic>.from(data!['inChat'] as Map)
+            : <String, dynamic>{}),
+      };
+      inChatMap[cleanUid] = inChat;
+
+      final payload = <String, dynamic>{
+        'inChat': inChatMap,
+        'updatedAt': FieldValue.serverTimestamp(),
+      };
+      if (inChat) {
+        final unreadMap = <String, dynamic>{
+          ...(data?['unreadCounts'] is Map
+              ? Map<String, dynamic>.from(data!['unreadCounts'] as Map)
+              : <String, dynamic>{}),
+        };
+        unreadMap[cleanUid] = 0;
+        final lastReadMap = <String, dynamic>{
+          ...(data?['lastReadAt'] is Map
+              ? Map<String, dynamic>.from(data!['lastReadAt'] as Map)
+              : <String, dynamic>{}),
+        };
+        lastReadMap[cleanUid] = FieldValue.serverTimestamp();
+        payload['unreadCounts'] = unreadMap;
+        payload['lastReadAt'] = lastReadMap;
+      }
+      tx.set(ref, payload, SetOptions(merge: true));
     });
   }
 }

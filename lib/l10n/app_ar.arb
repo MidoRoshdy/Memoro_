@@ -55,7 +55,7 @@
   "forgotPasswordTitle": "نسيت كلمة المرور",
   "forgotPasswordSubtitle": "أدخل بريدك الإلكتروني وسنرسل لك رابطًا لإعادة تعيين كلمة المرور.",
   "forgotPasswordSendButton": "إرسال",
-  "passwordResetEmailSent": "إن وُجد حساب لهذا البريد، ستصلك تعليمات إعادة التعيين قريبًا.",
+  "passwordResetEmailSent": "تم إرسال رابط إعادة تعيين كلمة المرور. من فضلك تحقق من بريدك الإلكتروني.",
   "loginWelcomeBack": "مرحبًا بعودتك",
   "loginJourneySubtitle": "سجّل الدخول لمتابعة رحلتك معنا.",
   "loginNoAccountPrefix": "ليس لديك حساب؟ ",

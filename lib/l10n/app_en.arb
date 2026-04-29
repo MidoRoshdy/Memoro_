@@ -55,7 +55,7 @@
   "forgotPasswordTitle": "Forgot password",
   "forgotPasswordSubtitle": "Enter your email and we will send you a link to reset your password.",
   "forgotPasswordSendButton": "Send",
-  "passwordResetEmailSent": "If an account exists for that email, you will receive reset instructions shortly.",
+  "passwordResetEmailSent": "Password reset link sent. Please check your email inbox.",
   "loginWelcomeBack": "Welcome back",
   "loginJourneySubtitle": "Log in to continue your journey with us.",
   "loginNoAccountPrefix": "Don't have an account? ",

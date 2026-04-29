@@ -177,7 +177,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String get forgotPasswordSendButton => 'إرسال';
 
   @override
-  String get passwordResetEmailSent => 'إن وُجد حساب لهذا البريد، ستصلك تعليمات إعادة التعيين قريبًا.';
+  String get passwordResetEmailSent => 'تم إرسال رابط إعادة تعيين كلمة المرور. من فضلك تحقق من بريدك الإلكتروني.';
 
   @override
   String get loginWelcomeBack => 'مرحبًا بعودتك';

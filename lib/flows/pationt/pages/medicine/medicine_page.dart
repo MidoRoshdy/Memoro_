@@ -345,6 +345,37 @@ class _MedicinePageState extends State<MedicinePage> {
     return null;
   }
 
+  int? _parseMinute(String value) {
+    final raw = value.trim();
+    if (raw.isEmpty) return null;
+    final normalized = raw.toUpperCase();
+    final clean = normalized.replaceAll('AM', '').replaceAll('PM', '').trim();
+    final parts = clean.split(':');
+    if (parts.length < 2) return 0;
+    final m = int.tryParse(parts[1].trim());
+    if (m == null || m < 0 || m > 59) return null;
+    return m;
+  }
+
+  bool _isDoseTaken(MedicineItem item, String doseTime) {
+    final takenAt = item.lastDoseAt?.toLocal();
+    if (takenAt == null) return false;
+    final now = DateTime.now();
+    if (takenAt.year != now.year ||
+        takenAt.month != now.month ||
+        takenAt.day != now.day) {
+      return false;
+    }
+    final hour = _parseHour(doseTime);
+    final minute = _parseMinute(doseTime);
+    if (hour == null || minute == null) {
+      return item.isTaken;
+    }
+    final scheduledToday = DateTime(now.year, now.month, now.day, hour, minute);
+    return takenAt.isAtSameMomentAs(scheduledToday) ||
+        takenAt.isAfter(scheduledToday);
+  }
+
   int? _resolveDoseHour(_MedicineDoseCardData dose) {
     final fromTime = _parseHour(dose.time);
     if (fromTime != null) return fromTime;
@@ -403,12 +434,12 @@ class _MedicinePageState extends State<MedicinePage> {
             name: items[i].item.name,
             subtitle: items[i].item.formattedDose,
             times: <String>[items[i].time],
-            buttonText: items[i].item.isTaken
+            buttonText: _isDoseTaken(items[i].item, items[i].time)
                 ? l10n.homeTakenButton
                 : l10n.medMarkAsTaken,
             buttonColor: defaultButtonBg,
             iconColor: iconColor,
-            isTaken: items[i].item.isTaken,
+            isTaken: _isDoseTaken(items[i].item, items[i].time),
             borderColor: defaultBorder,
             markTakenText: l10n.medMarkAsTaken,
             savedText: l10n.doctorMedStatusTaken,

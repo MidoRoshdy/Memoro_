@@ -24,6 +24,10 @@ class LoginPage extends StatefulWidget {
 }
 
 class _LoginPageState extends State<LoginPage> {
+  static final RegExp _emailRegex = RegExp(
+    r'^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$',
+  );
+
   Color get _roleColor => widget.role == AuthFlowRole.patient
       ? AppColorPalette.blueSteel
       : AppColorPalette.emerald;
@@ -55,8 +59,42 @@ class _LoginPageState extends State<LoginPage> {
   }
 
   bool get _loginFormComplete {
-    return _emailController.text.trim().isNotEmpty &&
-        _passwordController.text.trim().isNotEmpty;
+    final email = _emailController.text.trim();
+    final password = _passwordController.text.trim();
+    return email.isNotEmpty &&
+        _emailRegex.hasMatch(email) &&
+        password.isNotEmpty &&
+        password.length >= 6;
+  }
+
+  bool get _emailValid => _emailRegex.hasMatch(_emailController.text.trim());
+  bool get _passwordValid => _passwordController.text.trim().length >= 6;
+
+  Widget _validationHint({
+    required BuildContext context,
+    required bool isValid,
+    required String validMessage,
+    required String invalidMessage,
+  }) {
+    return Row(
+      children: [
+        Icon(
+          isValid ? Icons.check_circle : Icons.cancel,
+          size: 16,
+          color: isValid ? AppColorPalette.authLink : AppColorPalette.redBright,
+        ),
+        const SizedBox(width: 6),
+        Text(
+          isValid ? validMessage : invalidMessage,
+          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+            color: isValid
+                ? AppColorPalette.authLink
+                : AppColorPalette.redBright,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+      ],
+    );
   }
 
   @override
@@ -79,11 +117,31 @@ class _LoginPageState extends State<LoginPage> {
 
   Future<void> _onLogin() async {
     final l10n = AppLocalizations.of(context)!;
+    final email = _emailController.text.trim();
+    final password = _passwordController.text.trim();
+    if (email.isEmpty || password.isEmpty) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(l10n.authInvalidCredentials)));
+      return;
+    }
+    if (!_emailRegex.hasMatch(email)) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(l10n.registerErrorInvalidEmail)));
+      return;
+    }
+    if (password.length < 6) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(l10n.passwordTooShort)));
+      return;
+    }
     setState(() => _loading = true);
     try {
       await AuthService.login(
-        email: _emailController.text.trim(),
-        password: _passwordController.text.trim(),
+        email: email,
+        password: password,
         expectCaregiver: widget.role == AuthFlowRole.doctor,
       );
       await AuthService.saveRememberMe(
@@ -271,6 +329,15 @@ class _LoginPageState extends State<LoginPage> {
                               textInputAction: TextInputAction.next,
                               autofillHints: const [AutofillHints.email],
                             ),
+                            if (_emailController.text.trim().isNotEmpty) ...[
+                              const SizedBox(height: 6),
+                              _validationHint(
+                                context: context,
+                                isValid: _emailValid,
+                                validMessage: 'Email looks good',
+                                invalidMessage: 'Invalid email format',
+                              ),
+                            ],
                             longVerticalSpace,
                             AppTextField(
                               controller: _passwordController,
@@ -290,6 +357,16 @@ class _LoginPageState extends State<LoginPage> {
                                 if (!_loading && _loginFormComplete) _onLogin();
                               },
                             ),
+                            if (_passwordController.text.trim().isNotEmpty) ...[
+                              const SizedBox(height: 6),
+                              _validationHint(
+                                context: context,
+                                isValid: _passwordValid,
+                                validMessage: 'Password length is valid',
+                                invalidMessage:
+                                    'Password must be at least 6 characters',
+                              ),
+                            ],
                             extraShortVerticalSpace,
                             Row(
                               crossAxisAlignment: CrossAxisAlignment.center,
