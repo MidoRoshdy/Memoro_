@@ -21,6 +21,22 @@ class DoctorMedicinePage extends StatelessWidget {
     int missedCount,
     VoidCallback onViewDetails,
   ) {
+    final hasMissed = missedCount > 0;
+    final backgroundColor = hasMissed
+        ? const Color(0xFFFDF0F0)
+        : const Color(0xFFE8F7EF);
+    final accentColor = hasMissed
+        ? const Color(0xFFB93C3C)
+        : AppColorPalette.emerald;
+    final iconColor = hasMissed
+        ? const Color(0xFFD84A4A)
+        : AppColorPalette.emerald;
+    final iconData = hasMissed
+        ? Icons.warning_amber_rounded
+        : Icons.check_circle_rounded;
+    final buttonColor = hasMissed
+        ? const Color(0xFFEF5B5B)
+        : AppColorPalette.emerald;
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.symmetric(
@@ -28,12 +44,12 @@ class DoctorMedicinePage extends StatelessWidget {
         vertical: Dimensions.verticalSpacingRegular,
       ),
       decoration: BoxDecoration(
-        color: const Color(0xFFFDF0F0),
+        color: backgroundColor,
         borderRadius: BorderRadius.circular(12),
       ),
       child: Row(
         children: [
-          const Icon(Icons.warning_amber_rounded, color: Color(0xFFD84A4A), size: 20),
+          Icon(iconData, color: iconColor, size: 20),
           const SizedBox(width: Dimensions.horizontalSpacingShort),
           Expanded(
             child: Column(
@@ -43,31 +59,33 @@ class DoctorMedicinePage extends StatelessWidget {
                   l10n.doctorMedDosesMissedToday(missedCount),
                   style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                     fontWeight: FontWeight.w800,
-                    color: const Color(0xFFB93C3C),
+                    color: accentColor,
                   ),
                 ),
                 Text(
-                  missedCount > 0
+                  hasMissed
                       ? l10n.doctorMedRequiresAttention
                       : l10n.doctorMedAllGoodToday,
                   style: Theme.of(
                     context,
-                  ).textTheme.bodySmall?.copyWith(color: const Color(0xFFB93C3C)),
+                  ).textTheme.bodySmall?.copyWith(color: accentColor),
                 ),
               ],
             ),
           ),
-          FilledButton(
-            onPressed: onViewDetails,
-            style: FilledButton.styleFrom(
-              backgroundColor: const Color(0xFFEF5B5B),
-              foregroundColor: Colors.white,
-              minimumSize: const Size(88, 34),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+          if (hasMissed)
+            FilledButton(
+              onPressed: onViewDetails,
+              style: FilledButton.styleFrom(
+                backgroundColor: buttonColor,
+                foregroundColor: Colors.white,
+                minimumSize: const Size(88, 34),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
+              ),
+              child: Text(l10n.doctorMedViewDetails),
             ),
-            child: Text(l10n.doctorMedViewDetails),
-            
-          ),
         ],
       ),
     );
@@ -384,10 +402,6 @@ class DoctorMedicinePage extends StatelessWidget {
                           final missed = meds.where((m) => m.isMissed).toList();
                           if (missed.isNotEmpty) {
                             openMedicineDetails(missed.first);
-                            return;
-                          }
-                          if (meds.isNotEmpty) {
-                            openMedicineDetails(meds.first);
                           }
                         },
                       ),
