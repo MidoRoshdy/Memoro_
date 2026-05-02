@@ -171,29 +171,38 @@ class AppLocalizationsAr extends AppLocalizations {
   String get forgotPasswordTitle => 'نسيت كلمة المرور';
 
   @override
-  String get forgotPasswordSubtitle => 'أدخل رقم هاتفك المسجّل في الحساب وسنرسل لك رمز التحقق عبر رسالة نصية.';
+  String get forgotPasswordSubtitle => 'أدخل البريد الإلكتروني المسجّل في حسابك وسنرسل لك رمز التحقق عبر البريد الإلكتروني.';
 
   @override
   String get forgotPasswordSendButton => 'إرسال الرمز';
 
   @override
-  String get forgotPasswordPhoneLabel => 'رقم الهاتف';
+  String get forgotPasswordEmailLabel => 'البريد الإلكتروني';
 
   @override
-  String get forgotPasswordPhoneRequired => 'من فضلك أدخل رقم الهاتف المسجّل في الحساب.';
+  String get forgotPasswordEmailRequired => 'من فضلك أدخل البريد الإلكتروني المسجّل في حسابك.';
 
   @override
-  String get forgotPasswordSmsSent => 'تم إرسال رمز التحقق.';
+  String get forgotPasswordEmailInvalid => 'من فضلك أدخل بريدًا إلكترونيًا صالحًا.';
 
   @override
-  String get forgotPasswordSmsFailed => 'تعذّر إرسال رمز التحقق. حاول مرة أخرى.';
+  String get forgotPasswordOtpSent => 'تم إرسال رمز التحقق إلى بريدك الإلكتروني.';
 
   @override
-  String get otpScreenTitle => 'تحقّق من رقم هاتفك';
+  String get forgotPasswordOtpFailed => 'تعذّر إرسال رمز التحقق. حاول مرة أخرى.';
 
   @override
-  String otpInstructions(String phone) {
-    return 'أدخل الرمز المكوّن من 6 أرقام الذي أرسلناه إلى $phone.';
+  String get forgotPasswordEmailNotFound => 'لا يوجد حساب مسجّل بهذا البريد الإلكتروني.';
+
+  @override
+  String get forgotPasswordCooldown => 'من فضلك انتظر قليلًا قبل طلب رمز جديد.';
+
+  @override
+  String get otpScreenTitle => 'تحقّق من بريدك الإلكتروني';
+
+  @override
+  String otpInstructions(String email) {
+    return 'أدخل الرمز المكوّن من 6 أرقام الذي أرسلناه إلى $email.';
   }
 
   @override
@@ -212,6 +221,12 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get otpInvalidCode => 'رمز التحقق غير صحيح أو منتهي الصلاحية.';
+
+  @override
+  String get otpExpired => 'انتهت صلاحية رمز التحقق. اطلب رمزًا جديدًا.';
+
+  @override
+  String get otpTooManyAttempts => 'محاولات خاطئة كثيرة. اطلب رمزًا جديدًا من فضلك.';
 
   @override
   String get otpVerifying => 'جاري التحقق…';
@@ -238,7 +253,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String get resetPasswordMismatch => 'كلمتا المرور غير متطابقتين.';
 
   @override
-  String get resetPasswordPhoneNotFound => 'لا يوجد حساب مسجّل بهذا الرقم.';
+  String get resetPasswordEmailNotFound => 'لا يوجد حساب مسجّل بهذا البريد الإلكتروني.';
 
   @override
   String get resetPasswordGenericError => 'تعذّر تحديث كلمة المرور. حاول مرة أخرى.';

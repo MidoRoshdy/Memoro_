@@ -171,29 +171,38 @@ class AppLocalizationsEn extends AppLocalizations {
   String get forgotPasswordTitle => 'Forgot password';
 
   @override
-  String get forgotPasswordSubtitle => 'Enter the phone number registered to your account and we will send you a verification code by SMS.';
+  String get forgotPasswordSubtitle => 'Enter the email registered to your account and we will send you a verification code by email.';
 
   @override
   String get forgotPasswordSendButton => 'Send code';
 
   @override
-  String get forgotPasswordPhoneLabel => 'Phone number';
+  String get forgotPasswordEmailLabel => 'Email';
 
   @override
-  String get forgotPasswordPhoneRequired => 'Please enter the phone number registered to your account.';
+  String get forgotPasswordEmailRequired => 'Please enter the email registered to your account.';
 
   @override
-  String get forgotPasswordSmsSent => 'Verification code sent.';
+  String get forgotPasswordEmailInvalid => 'Please enter a valid email address.';
 
   @override
-  String get forgotPasswordSmsFailed => 'Could not send the verification code. Please try again.';
+  String get forgotPasswordOtpSent => 'Verification code sent to your email.';
 
   @override
-  String get otpScreenTitle => 'Verify your phone';
+  String get forgotPasswordOtpFailed => 'Could not send the verification code. Please try again.';
 
   @override
-  String otpInstructions(String phone) {
-    return 'Enter the 6-digit code we just sent to $phone.';
+  String get forgotPasswordEmailNotFound => 'No account is registered with this email.';
+
+  @override
+  String get forgotPasswordCooldown => 'Please wait before requesting another code.';
+
+  @override
+  String get otpScreenTitle => 'Verify your email';
+
+  @override
+  String otpInstructions(String email) {
+    return 'Enter the 6-digit code we just sent to $email.';
   }
 
   @override
@@ -212,6 +221,12 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get otpInvalidCode => 'Invalid or expired verification code.';
+
+  @override
+  String get otpExpired => 'Verification code expired. Please request a new one.';
+
+  @override
+  String get otpTooManyAttempts => 'Too many incorrect attempts. Please request a new code.';
 
   @override
   String get otpVerifying => 'Verifying…';
@@ -238,7 +253,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get resetPasswordMismatch => 'Passwords do not match.';
 
   @override
-  String get resetPasswordPhoneNotFound => 'No account is registered with this phone number.';
+  String get resetPasswordEmailNotFound => 'No account is registered with this email.';
 
   @override
   String get resetPasswordGenericError => 'Could not update the password. Please try again.';

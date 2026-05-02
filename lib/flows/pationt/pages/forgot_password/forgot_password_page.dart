@@ -1,9 +1,6 @@
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:flutter/foundation.dart';
+import 'package:cloud_functions/cloud_functions.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:intl_phone_field/intl_phone_field.dart';
-import 'package:intl_phone_field/phone_number.dart';
 
 import '../../../../core/constants/dimensions.dart';
 import '../../../../core/constants/string_assets.dart';
@@ -12,6 +9,7 @@ import '../../../../core/theme/app_color_palette.dart';
 import '../../../shared/auth/auth_flow_role.dart';
 import '../../../shared/auth/otp_verification_page.dart';
 import '../../../../l10n/app_localizations.dart';
+import '../../widgets/app_text_field.dart';
 import '../../widgets/language_switch_icon.dart';
 import '../../widgets/primary_button.dart';
 
@@ -25,11 +23,9 @@ class ForgotPasswordPage extends StatefulWidget {
 }
 
 class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
-  static const double _fieldRadius = 12;
+  static final RegExp _emailRegex = RegExp(r'^[^\s@]+@[^\s@]+\.[^\s@]+$');
 
-  final _phoneController = TextEditingController();
-  String _phoneCompleteNumber = '';
-  bool _phoneIsValid = false;
+  final _emailController = TextEditingController();
   bool _loading = false;
 
   Color get _roleColor => widget.role == AuthFlowRole.patient
@@ -44,94 +40,81 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
 
   @override
   void dispose() {
-    _phoneController.dispose();
+    _emailController.dispose();
     super.dispose();
-  }
-
-  InputDecoration _phoneDecoration(ThemeData theme, AppLocalizations l10n) {
-    OutlineInputBorder border(Color color) => OutlineInputBorder(
-      borderRadius: BorderRadius.circular(_fieldRadius),
-      borderSide: BorderSide(color: color, width: 1.2),
-    );
-    return InputDecoration(
-      hintText: l10n.fieldHintPhone,
-      hintStyle: theme.textTheme.bodyLarge?.copyWith(
-        color: Colors.grey.shade600,
-      ),
-      filled: true,
-      fillColor: AppColorPalette.white,
-      border: border(Colors.grey.shade400),
-      enabledBorder: border(Colors.grey.shade400),
-      focusedBorder: border(_roleColor),
-      contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
-      counterText: '',
-    );
   }
 
   Future<void> _onSend() async {
     final l10n = AppLocalizations.of(context)!;
-    final phone = _phoneCompleteNumber.trim();
+    final email = _emailController.text.trim().toLowerCase();
     debugPrint(
-      '[ForgotPassword] Send tapped: phone="$phone", '
-      'role=${widget.role}, valid=$_phoneIsValid',
+      '[ForgotPassword] Send tapped: email="$email", role=${widget.role}',
     );
 
-    if (phone.isEmpty || !_phoneIsValid) {
-      debugPrint(
-        '[ForgotPassword] Aborting: phone empty or invalid (raw="$phone").',
-      );
+    if (email.isEmpty) {
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(SnackBar(content: Text(l10n.forgotPasswordPhoneRequired)));
+      ).showSnackBar(SnackBar(content: Text(l10n.forgotPasswordEmailRequired)));
+      return;
+    }
+    if (!_emailRegex.hasMatch(email)) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(l10n.forgotPasswordEmailInvalid)));
       return;
     }
 
     setState(() => _loading = true);
     final stopwatch = Stopwatch()..start();
     try {
-      debugPrint('[ForgotPassword] Clearing any previous temp auth session…');
-      await PasswordResetService.clearTempSession();
-
-      debugPrint('[ForgotPassword] Calling verifyPhoneNumber for $phone…');
-      final verification = await PasswordResetService.sendOtp(
-        phoneNumber: phone,
-      );
+      final request = await PasswordResetService.sendOtp(email: email);
       stopwatch.stop();
       debugPrint(
-        '[ForgotPassword] OTP code dispatched in '
-        '${stopwatch.elapsedMilliseconds}ms. '
-        'verificationId=${verification.verificationId} '
-        'resendToken=${verification.resendToken} '
-        'phone=${verification.phoneNumber}',
+        '[ForgotPassword] OTP requested in '
+        '${stopwatch.elapsedMilliseconds}ms ttl=${request.expiresInSeconds}s',
       );
-
-      if (!mounted) {
-        debugPrint('[ForgotPassword] Widget unmounted before navigation.');
-        return;
-      }
+      if (!mounted) return;
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(SnackBar(content: Text(l10n.forgotPasswordSmsSent)));
+      ).showSnackBar(SnackBar(content: Text(l10n.forgotPasswordOtpSent)));
       await Navigator.of(context).push(
         MaterialPageRoute<void>(
           builder: (_) => OtpVerificationPage(
             role: widget.role,
-            verification: verification,
+            email: email,
+            expiresInSeconds: request.expiresInSeconds,
           ),
         ),
       );
-    } on FirebaseAuthException catch (e, st) {
+    } on FirebaseFunctionsException catch (e, st) {
       stopwatch.stop();
       debugPrint(
-        '[ForgotPassword] FirebaseAuthException after '
-        '${stopwatch.elapsedMilliseconds}ms: '
-        'code=${e.code}, message=${e.message}',
+        '[ForgotPassword] FirebaseFunctionsException after '
+        '${stopwatch.elapsedMilliseconds}ms: code=${e.code} message=${e.message}',
       );
       debugPrint('[ForgotPassword] Stack: $st');
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(e.message ?? l10n.forgotPasswordSmsFailed)),
-      );
+      String message;
+      switch (e.code) {
+        case 'not-found':
+          message = l10n.forgotPasswordEmailNotFound;
+          break;
+        case 'invalid-argument':
+          message = l10n.forgotPasswordEmailInvalid;
+          break;
+        case 'resource-exhausted':
+          message = e.message?.trim().isNotEmpty == true
+              ? e.message!
+              : l10n.forgotPasswordCooldown;
+          break;
+        default:
+          message = e.message?.trim().isNotEmpty == true
+              ? e.message!
+              : l10n.forgotPasswordOtpFailed;
+      }
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(message)));
     } catch (e, st) {
       stopwatch.stop();
       debugPrint(
@@ -142,7 +125,7 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
       if (!mounted) return;
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(SnackBar(content: Text(l10n.forgotPasswordSmsFailed)));
+      ).showSnackBar(SnackBar(content: Text(l10n.forgotPasswordOtpFailed)));
     } finally {
       if (mounted) setState(() => _loading = false);
       debugPrint('[ForgotPassword] _onSend finished.');
@@ -263,40 +246,18 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
                             const SizedBox(
                               height: Dimensions.horizontalSpacingLarge,
                             ),
-                            Text(
-                              l10n.forgotPasswordPhoneLabel,
-                              style: labelAboveStyle,
-                            ),
-                            shortVerticalSpace,
-                            IntlPhoneField(
-                              controller: _phoneController,
-                              enabled: !_loading,
-                              initialCountryCode: 'EG',
-                              languageCode: Localizations.localeOf(
-                                context,
-                              ).languageCode,
-                              textInputAction: TextInputAction.done,
-                              autovalidateMode:
-                                  AutovalidateMode.onUserInteraction,
-                              invalidNumberMessage: l10n.invalidPhoneNumber,
-                              disableLengthCheck: false,
-                              decoration: _phoneDecoration(theme, l10n),
-                              style: theme.textTheme.bodyLarge?.copyWith(
-                                color: AppColorPalette.black,
-                              ),
-                              dropdownTextStyle: theme.textTheme.bodyLarge
-                                  ?.copyWith(color: AppColorPalette.black),
-                              flagsButtonPadding:
-                                  const EdgeInsetsDirectional.only(start: 8),
-                              onChanged: (PhoneNumber phone) {
-                                setState(() {
-                                  _phoneCompleteNumber = phone.completeNumber;
-                                });
-                              },
-                              validator: (phone) {
-                                _phoneIsValid =
-                                    phone != null && phone.number.isNotEmpty;
-                                return null;
+                            AppTextField(
+                              controller: _emailController,
+                              label: l10n.forgotPasswordEmailLabel,
+                              hintText: l10n.fieldHintEmail,
+                              labelAbove: true,
+                              labelAboveStyle: labelAboveStyle,
+                              fillColor: AppColorPalette.white,
+                              keyboardType: TextInputType.emailAddress,
+                              textInputAction: TextInputAction.send,
+                              autofillHints: const [AutofillHints.email],
+                              onSubmitted: (_) {
+                                if (!_loading) _onSend();
                               },
                             ),
                             longVerticalSpace,

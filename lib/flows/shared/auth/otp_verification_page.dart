@@ -1,6 +1,6 @@
 import 'dart:async';
 
-import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_functions/cloud_functions.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -18,11 +18,13 @@ class OtpVerificationPage extends StatefulWidget {
   const OtpVerificationPage({
     super.key,
     required this.role,
-    required this.verification,
+    required this.email,
+    this.expiresInSeconds = 600,
   });
 
   final AuthFlowRole role;
-  final PasswordResetVerification verification;
+  final String email;
+  final int expiresInSeconds;
 
   @override
   State<OtpVerificationPage> createState() => _OtpVerificationPageState();
@@ -34,9 +36,7 @@ class _OtpVerificationPageState extends State<OtpVerificationPage> {
 
   late final List<TextEditingController> _digitControllers;
   late final List<FocusNode> _digitFocusNodes;
-  late PasswordResetVerification _verification;
 
-  bool _verifying = false;
   bool _resending = false;
   Timer? _cooldownTimer;
   int _cooldownRemaining = _resendCooldownSeconds;
@@ -48,8 +48,8 @@ class _OtpVerificationPageState extends State<OtpVerificationPage> {
   @override
   void initState() {
     super.initState();
-    _verification = widget.verification;
-    _digitControllers = List.generate(_otpLength, (_) => TextEditingController());
+    _digitControllers =
+        List.generate(_otpLength, (_) => TextEditingController());
     _digitFocusNodes = List.generate(_otpLength, (_) => FocusNode());
     _startCooldownTimer();
   }
@@ -88,37 +88,18 @@ class _OtpVerificationPageState extends State<OtpVerificationPage> {
 
   bool get _codeComplete => _enteredCode.length == _otpLength;
 
-  Future<void> _onVerify() async {
-    final l10n = AppLocalizations.of(context)!;
-    if (!_codeComplete || _verifying) return;
-    setState(() => _verifying = true);
-    try {
-      await PasswordResetService.verifyOtp(
-        verificationId: _verification.verificationId,
-        smsCode: _enteredCode,
-      );
-      if (!mounted) return;
-      await Navigator.of(context).pushReplacement(
-        MaterialPageRoute<void>(
-          builder: (_) => ResetPasswordPage(role: widget.role),
+  void _onContinue() {
+    if (!_codeComplete) return;
+    final code = _enteredCode;
+    Navigator.of(context).pushReplacement(
+      MaterialPageRoute<void>(
+        builder: (_) => ResetPasswordPage(
+          role: widget.role,
+          email: widget.email,
+          otp: code,
         ),
-      );
-    } on FirebaseAuthException catch (e) {
-      if (!mounted) return;
-      final message = e.message != null && e.message!.trim().isNotEmpty
-          ? e.message!
-          : l10n.otpInvalidCode;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(message)));
-    } catch (_) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(l10n.otpInvalidCode)));
-    } finally {
-      if (mounted) setState(() => _verifying = false);
-    }
+      ),
+    );
   }
 
   Future<void> _onResend() async {
@@ -126,13 +107,9 @@ class _OtpVerificationPageState extends State<OtpVerificationPage> {
     final l10n = AppLocalizations.of(context)!;
     setState(() => _resending = true);
     try {
-      final next = await PasswordResetService.sendOtp(
-        phoneNumber: _verification.phoneNumber,
-        resendToken: _verification.resendToken,
-      );
+      await PasswordResetService.sendOtp(email: widget.email);
       if (!mounted) return;
       setState(() {
-        _verification = next;
         for (final c in _digitControllers) {
           c.clear();
         }
@@ -141,19 +118,32 @@ class _OtpVerificationPageState extends State<OtpVerificationPage> {
       _startCooldownTimer();
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(SnackBar(content: Text(l10n.forgotPasswordSmsSent)));
-    } on FirebaseAuthException catch (e) {
+      ).showSnackBar(SnackBar(content: Text(l10n.forgotPasswordOtpSent)));
+    } on FirebaseFunctionsException catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(e.message ?? l10n.forgotPasswordSmsFailed),
-        ),
-      );
+      String message;
+      switch (e.code) {
+        case 'resource-exhausted':
+          message = e.message?.trim().isNotEmpty == true
+              ? e.message!
+              : l10n.forgotPasswordCooldown;
+          break;
+        case 'not-found':
+          message = l10n.forgotPasswordEmailNotFound;
+          break;
+        default:
+          message = e.message?.trim().isNotEmpty == true
+              ? e.message!
+              : l10n.forgotPasswordOtpFailed;
+      }
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(message)));
     } catch (_) {
       if (!mounted) return;
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(SnackBar(content: Text(l10n.forgotPasswordSmsFailed)));
+      ).showSnackBar(SnackBar(content: Text(l10n.forgotPasswordOtpFailed)));
     } finally {
       if (mounted) setState(() => _resending = false);
     }
@@ -163,7 +153,6 @@ class _OtpVerificationPageState extends State<OtpVerificationPage> {
     final digits = value.replaceAll(RegExp(r'[^0-9]'), '');
 
     if (digits.length > 1) {
-      // User pasted multiple digits — distribute across boxes from index.
       for (var i = 0; i < _otpLength - index; i++) {
         if (i < digits.length) {
           _digitControllers[index + i].text = digits[i];
@@ -180,13 +169,11 @@ class _OtpVerificationPageState extends State<OtpVerificationPage> {
       }
     }
     setState(() {});
-    if (_codeComplete && !_verifying) {
-      _onVerify();
-    }
   }
 
   KeyEventResult _handleBackspace(int index, KeyEvent event) {
-    if (event is KeyDownEvent && event.logicalKey == LogicalKeyboardKey.backspace) {
+    if (event is KeyDownEvent &&
+        event.logicalKey == LogicalKeyboardKey.backspace) {
       if (_digitControllers[index].text.isEmpty && index > 0) {
         _digitControllers[index - 1].clear();
         _digitFocusNodes[index - 1].requestFocus();
@@ -206,7 +193,6 @@ class _OtpVerificationPageState extends State<OtpVerificationPage> {
         child: TextField(
           controller: _digitControllers[index],
           focusNode: _digitFocusNodes[index],
-          enabled: !_verifying,
           textAlign: TextAlign.center,
           keyboardType: TextInputType.number,
           maxLength: 1,
@@ -215,9 +201,9 @@ class _OtpVerificationPageState extends State<OtpVerificationPage> {
             FilteringTextInputFormatter.digitsOnly,
           ],
           style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-            color: AppColorPalette.blueSteel,
-            fontWeight: FontWeight.w800,
-          ),
+                color: AppColorPalette.blueSteel,
+                fontWeight: FontWeight.w800,
+              ),
           decoration: InputDecoration(
             counterText: '',
             filled: true,
@@ -238,11 +224,16 @@ class _OtpVerificationPageState extends State<OtpVerificationPage> {
     );
   }
 
-  String _maskedPhone(String phone) {
-    final trimmed = phone.trim();
-    if (trimmed.length <= 4) return trimmed;
-    final visible = trimmed.substring(trimmed.length - 4);
-    return '••• $visible';
+  String _maskedEmail(String email) {
+    final trimmed = email.trim();
+    final atIndex = trimmed.indexOf('@');
+    if (atIndex <= 1) return trimmed;
+    final localPart = trimmed.substring(0, atIndex);
+    final domain = trimmed.substring(atIndex);
+    if (localPart.length <= 2) return trimmed;
+    final visibleStart = localPart.substring(0, 2);
+    final masked = '*' * (localPart.length - 2);
+    return '$visibleStart$masked$domain';
   }
 
   @override
@@ -272,12 +263,7 @@ class _OtpVerificationPageState extends State<OtpVerificationPage> {
                   children: [
                     BackButton(
                       color: AppColorPalette.white,
-                      onPressed: () async {
-                        final navigator = Navigator.of(context);
-                        await PasswordResetService.clearTempSession();
-                        if (!mounted) return;
-                        navigator.pop();
-                      },
+                      onPressed: () => Navigator.of(context).pop(),
                     ),
                     const Spacer(),
                     const LanguageSwitchIcon(),
@@ -322,9 +308,7 @@ class _OtpVerificationPageState extends State<OtpVerificationPage> {
                               height: Dimensions.horizontalSpacingRegular,
                             ),
                             Text(
-                              l10n.otpInstructions(
-                                _maskedPhone(_verification.phoneNumber),
-                              ),
+                              l10n.otpInstructions(_maskedEmail(widget.email)),
                               textAlign: TextAlign.center,
                               style: theme.textTheme.bodyLarge?.copyWith(
                                 color: AppColorPalette.white,
@@ -337,7 +321,8 @@ class _OtpVerificationPageState extends State<OtpVerificationPage> {
                             Directionality(
                               textDirection: TextDirection.ltr,
                               child: Row(
-                                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceEvenly,
                                 children: [
                                   for (var i = 0; i < _otpLength; i++)
                                     _digitBox(i),
@@ -346,12 +331,9 @@ class _OtpVerificationPageState extends State<OtpVerificationPage> {
                             ),
                             longVerticalSpace,
                             PrimaryButton(
-                              label: _verifying
-                                  ? l10n.otpVerifying
-                                  : l10n.otpVerifyButton,
-                              onPressed: (_verifying || !_codeComplete)
-                                  ? null
-                                  : _onVerify,
+                              label: l10n.otpVerifyButton,
+                              onPressed:
+                                  _codeComplete ? _onContinue : null,
                             ),
                             mediumVerticalSpace,
                             Row(
@@ -369,7 +351,8 @@ class _OtpVerificationPageState extends State<OtpVerificationPage> {
                                 if (_cooldownRemaining > 0)
                                   Text(
                                     l10n.otpResendCooldown(_cooldownRemaining),
-                                    style: theme.textTheme.bodyMedium?.copyWith(
+                                    style:
+                                        theme.textTheme.bodyMedium?.copyWith(
                                       color: AppColorPalette.white,
                                       fontWeight: FontWeight.w700,
                                     ),
@@ -388,11 +371,11 @@ class _OtpVerificationPageState extends State<OtpVerificationPage> {
                                       l10n.otpResendAction,
                                       style: theme.textTheme.bodyMedium
                                           ?.copyWith(
-                                            color: AppColorPalette.white,
-                                            fontWeight: FontWeight.w800,
-                                            decoration:
-                                                TextDecoration.underline,
-                                          ),
+                                        color: AppColorPalette.white,
+                                        fontWeight: FontWeight.w800,
+                                        decoration:
+                                            TextDecoration.underline,
+                                      ),
                                     ),
                                   ),
                               ],

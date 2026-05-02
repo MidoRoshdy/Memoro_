@@ -14,9 +14,16 @@ import '../../pationt/widgets/primary_button.dart';
 import 'auth_flow_role.dart';
 
 class ResetPasswordPage extends StatefulWidget {
-  const ResetPasswordPage({super.key, required this.role});
+  const ResetPasswordPage({
+    super.key,
+    required this.role,
+    required this.email,
+    required this.otp,
+  });
 
   final AuthFlowRole role;
+  final String email;
+  final String otp;
 
   @override
   State<ResetPasswordPage> createState() => _ResetPasswordPageState();
@@ -79,10 +86,11 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
 
     setState(() => _submitting = true);
     try {
-      await PasswordResetService.commitNewPassword(newPassword: pwd);
-      // Server already deleted the temp phone session; make sure local state
-      // is cleared too.
-      await PasswordResetService.clearTempSession();
+      await PasswordResetService.verifyOtpAndCommit(
+        email: widget.email,
+        otp: widget.otp,
+        newPassword: pwd,
+      );
       if (!mounted) return;
       ScaffoldMessenger.of(
         context,
@@ -96,7 +104,16 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
       String message;
       switch (e.code) {
         case 'not-found':
-          message = l10n.resetPasswordPhoneNotFound;
+          message = l10n.otpInvalidCode;
+          break;
+        case 'deadline-exceeded':
+          message = l10n.otpExpired;
+          break;
+        case 'permission-denied':
+          message = l10n.otpInvalidCode;
+          break;
+        case 'resource-exhausted':
+          message = l10n.otpTooManyAttempts;
           break;
         case 'invalid-argument':
           message = l10n.passwordTooShort;
@@ -152,15 +169,10 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
                       color: AppColorPalette.white,
                       onPressed: _submitting
                           ? null
-                          : () async {
-                              final navigator = Navigator.of(context);
-                              await PasswordResetService.clearTempSession();
-                              if (!mounted) return;
-                              navigator.pushNamedAndRemoveUntil(
+                          : () => Navigator.of(context).pushNamedAndRemoveUntil(
                                 _loginRoute,
                                 (route) => false,
-                              );
-                            },
+                              ),
                     ),
                     const Spacer(),
                     const LanguageSwitchIcon(),
