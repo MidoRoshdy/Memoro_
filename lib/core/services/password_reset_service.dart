@@ -48,6 +48,34 @@ abstract final class PasswordResetService {
     }
   }
 
+  /// Verifies [otp] for [email] without consuming it. Throws a
+  /// [FirebaseFunctionsException] with a meaningful `code` when the OTP is
+  /// wrong, expired, or the attempt budget is exhausted.
+  static Future<void> verifyOtp({
+    required String email,
+    required String otp,
+  }) async {
+    final normalized = email.trim().toLowerCase();
+    debugPrint(
+      '[PasswordResetService] verifyEmailOtp start '
+      'email=$normalized otpLen=${otp.length}',
+    );
+    try {
+      final callable = _functions.httpsCallable('verifyEmailOtp');
+      await callable.call<Map<dynamic, dynamic>>({
+        'email': normalized,
+        'otp': otp.trim(),
+      });
+      debugPrint('[PasswordResetService] verifyEmailOtp ok');
+    } on FirebaseFunctionsException catch (e) {
+      debugPrint(
+        '[PasswordResetService] verifyEmailOtp failed: '
+        'code=${e.code} message=${e.message}',
+      );
+      rethrow;
+    }
+  }
+
   /// Verifies [otp] for [email] and updates the password to [newPassword].
   /// Returns the role string ('caregiver', 'patient', or 'unknown').
   static Future<String> verifyOtpAndCommit({

@@ -38,6 +38,7 @@ class _OtpVerificationPageState extends State<OtpVerificationPage> {
   late final List<FocusNode> _digitFocusNodes;
 
   bool _resending = false;
+  bool _verifying = false;
   Timer? _cooldownTimer;
   int _cooldownRemaining = _resendCooldownSeconds;
 
@@ -88,18 +89,66 @@ class _OtpVerificationPageState extends State<OtpVerificationPage> {
 
   bool get _codeComplete => _enteredCode.length == _otpLength;
 
-  void _onContinue() {
-    if (!_codeComplete) return;
+  Future<void> _onContinue() async {
+    if (!_codeComplete || _verifying) return;
+    final l10n = AppLocalizations.of(context)!;
     final code = _enteredCode;
-    Navigator.of(context).pushReplacement(
-      MaterialPageRoute<void>(
-        builder: (_) => ResetPasswordPage(
-          role: widget.role,
-          email: widget.email,
-          otp: code,
+    setState(() => _verifying = true);
+    try {
+      await PasswordResetService.verifyOtp(email: widget.email, otp: code);
+      if (!mounted) return;
+      await Navigator.of(context).pushReplacement(
+        MaterialPageRoute<void>(
+          builder: (_) => ResetPasswordPage(
+            role: widget.role,
+            email: widget.email,
+            otp: code,
+          ),
         ),
-      ),
-    );
+      );
+    } on FirebaseFunctionsException catch (e) {
+      if (!mounted) return;
+      String message;
+      switch (e.code) {
+        case 'permission-denied':
+        case 'not-found':
+          message = l10n.otpInvalidCode;
+          break;
+        case 'deadline-exceeded':
+          message = l10n.otpExpired;
+          break;
+        case 'resource-exhausted':
+          message = l10n.otpTooManyAttempts;
+          break;
+        case 'invalid-argument':
+          message = l10n.otpInvalidCode;
+          break;
+        default:
+          message = e.message?.trim().isNotEmpty == true
+              ? e.message!
+              : l10n.otpInvalidCode;
+      }
+      _clearDigits();
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(message)));
+    } catch (_) {
+      if (!mounted) return;
+      _clearDigits();
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(l10n.otpInvalidCode)));
+    } finally {
+      if (mounted) setState(() => _verifying = false);
+    }
+  }
+
+  void _clearDigits() {
+    for (final c in _digitControllers) {
+      c.clear();
+    }
+    _digitFocusNodes.first.requestFocus();
+    setState(() {});
   }
 
   Future<void> _onResend() async {
@@ -193,6 +242,7 @@ class _OtpVerificationPageState extends State<OtpVerificationPage> {
         child: TextField(
           controller: _digitControllers[index],
           focusNode: _digitFocusNodes[index],
+          enabled: !_verifying,
           textAlign: TextAlign.center,
           keyboardType: TextInputType.number,
           maxLength: 1,
@@ -331,9 +381,12 @@ class _OtpVerificationPageState extends State<OtpVerificationPage> {
                             ),
                             longVerticalSpace,
                             PrimaryButton(
-                              label: l10n.otpVerifyButton,
-                              onPressed:
-                                  _codeComplete ? _onContinue : null,
+                              label: _verifying
+                                  ? l10n.otpVerifying
+                                  : l10n.otpVerifyButton,
+                              onPressed: (_codeComplete && !_verifying)
+                                  ? _onContinue
+                                  : null,
                             ),
                             mediumVerticalSpace,
                             Row(

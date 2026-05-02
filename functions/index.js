@@ -333,7 +333,9 @@ exports.onEmergencyRequestActive = onDocumentWritten(
       data: {
         doctorUid,
         patientUid,
-        ...(hasCoords ? { latitude: String(latitude), longitude: String(longitude) } : {}),
+        ...(hasCoords
+          ? { latitude: String(latitude), longitude: String(longitude) }
+          : {}),
         ...(mapsUrl ? { mapsUrl } : {}),
         ...(locationText ? { locationText } : {}),
       },
@@ -584,10 +586,7 @@ function generateOtpCode() {
 }
 
 function hashOtp(code, salt) {
-  return crypto
-    .createHash("sha256")
-    .update(`${salt}:${code}`)
-    .digest("hex");
+  return crypto.createHash("sha256").update(`${salt}:${code}`).digest("hex");
 }
 
 async function findAuthUserByEmail(email) {
@@ -621,9 +620,7 @@ async function findProfileRoleByUid(uid) {
 }
 
 function buildOtpEmail({ code, displayName }) {
-  const greeting = displayName
-    ? `Hi ${displayName},`
-    : "Hi,";
+  const greeting = displayName ? `Hi ${displayName},` : "Hi,";
   const text = [
     greeting,
     "",
@@ -665,7 +662,10 @@ function createTransport() {
 }
 
 exports.requestEmailOtp = onCall(
-  { region: "us-central1", secrets: [SMTP_EMAIL, SMTP_PASSWORD, SMTP_FROM_NAME] },
+  {
+    region: "us-central1",
+    secrets: [SMTP_EMAIL, SMTP_PASSWORD, SMTP_FROM_NAME],
+  },
   async (request) => {
     const email = normalizeEmail(request.data && request.data.email);
     if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
@@ -689,9 +689,7 @@ exports.requestEmailOtp = onCall(
       const sinceLastSendSec =
         (Date.now() - existing.lastSentAt.toMillis()) / 1000;
       if (sinceLastSendSec < OTP_RESEND_COOLDOWN_SECONDS) {
-        const wait = Math.ceil(
-          OTP_RESEND_COOLDOWN_SECONDS - sinceLastSendSec,
-        );
+        const wait = Math.ceil(OTP_RESEND_COOLDOWN_SECONDS - sinceLastSendSec);
         throw new HttpsError(
           "resource-exhausted",
           `Please wait ${wait}s before requesting a new code.`,
@@ -745,6 +743,58 @@ exports.requestEmailOtp = onCall(
   },
 );
 
+exports.verifyEmailOtp = onCall({ region: "us-central1" }, async (request) => {
+  const email = normalizeEmail(request.data && request.data.email);
+  const otp = ((request.data && request.data.otp) || "").toString().trim();
+
+  if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    throw new HttpsError("invalid-argument", "A valid email is required.");
+  }
+  if (!/^\d{6}$/.test(otp)) {
+    throw new HttpsError("invalid-argument", "Invalid verification code.");
+  }
+
+  const otpRef = db.collection(PASSWORD_RESET_OTPS).doc(email);
+  const snap = await otpRef.get();
+  if (!snap.exists) {
+    throw new HttpsError("not-found", "Invalid or expired verification code.");
+  }
+  const data = snap.data();
+
+  if (!data || !data.expiresAt || data.expiresAt.toMillis() < Date.now()) {
+    await otpRef.delete().catch(() => {});
+    throw new HttpsError(
+      "deadline-exceeded",
+      "Verification code expired. Please request a new one.",
+    );
+  }
+
+  const attempts = (data.attempts || 0) + 1;
+  if (attempts > OTP_MAX_ATTEMPTS) {
+    await otpRef.delete().catch(() => {});
+    throw new HttpsError(
+      "resource-exhausted",
+      "Too many incorrect attempts. Please request a new code.",
+    );
+  }
+
+  const expectedHash = hashOtp(otp, data.salt || "");
+  if (expectedHash !== data.codeHash) {
+    await otpRef.set({ attempts }, { merge: true });
+    throw new HttpsError("permission-denied", "Invalid verification code.");
+  }
+
+  await otpRef.set(
+    {
+      verified: true,
+      verifiedAt: admin.firestore.FieldValue.serverTimestamp(),
+    },
+    { merge: true },
+  );
+
+  return { ok: true };
+});
+
 exports.verifyEmailOtpAndResetPassword = onCall(
   { region: "us-central1" },
   async (request) => {
@@ -775,11 +825,7 @@ exports.verifyEmailOtpAndResetPassword = onCall(
     }
     const data = snap.data();
 
-    if (
-      !data ||
-      !data.expiresAt ||
-      data.expiresAt.toMillis() < Date.now()
-    ) {
+    if (!data || !data.expiresAt || data.expiresAt.toMillis() < Date.now()) {
       await otpRef.delete().catch(() => {});
       throw new HttpsError(
         "deadline-exceeded",
@@ -799,10 +845,7 @@ exports.verifyEmailOtpAndResetPassword = onCall(
     const expectedHash = hashOtp(otp, data.salt || "");
     if (expectedHash !== data.codeHash) {
       await otpRef.set({ attempts }, { merge: true });
-      throw new HttpsError(
-        "permission-denied",
-        "Invalid verification code.",
-      );
+      throw new HttpsError("permission-denied", "Invalid verification code.");
     }
 
     const uid = data.uid;
