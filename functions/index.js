@@ -6,6 +6,7 @@ const {
   onDocumentWritten,
 } = require("firebase-functions/v2/firestore");
 const { onSchedule } = require("firebase-functions/v2/scheduler");
+const { onCall, HttpsError } = require("firebase-functions/v2/https");
 const { logger } = require("firebase-functions");
 
 admin.initializeApp();
@@ -560,3 +561,111 @@ exports.retryFailedNotifications = onSchedule("every 10 minutes", async () => {
   }
   logger.info("retryFailedNotifications completed");
 });
+
+function normalizePhone(raw) {
+  return (raw || "").toString().replace(/[\s\-()]/g, "").trim();
+}
+
+async function findUserByPhone(phone) {
+  const target = normalizePhone(phone);
+  if (!target) return null;
+
+  const caregiverSnap = await db
+    .collection("careGiver")
+    .where("phone", "==", target)
+    .limit(1)
+    .get();
+  if (!caregiverSnap.empty) {
+    const doc = caregiverSnap.docs[0];
+    return { uid: doc.id, role: "caregiver", ref: doc.ref };
+  }
+
+  const patientSnap = await db
+    .collection("users")
+    .doc("patients")
+    .collection("users")
+    .where("phone", "==", target)
+    .limit(1)
+    .get();
+  if (!patientSnap.empty) {
+    const doc = patientSnap.docs[0];
+    return { uid: doc.id, role: "patient", ref: doc.ref };
+  }
+
+  const legacyRootSnap = await db
+    .collection("patients")
+    .where("phone", "==", target)
+    .limit(1)
+    .get();
+  if (!legacyRootSnap.empty) {
+    const doc = legacyRootSnap.docs[0];
+    return { uid: doc.id, role: "patient", ref: doc.ref };
+  }
+
+  return null;
+}
+
+exports.resetPasswordWithVerifiedPhone = onCall(
+  { region: "us-central1" },
+  async (request) => {
+    const auth = request.auth;
+    if (!auth) {
+      throw new HttpsError(
+        "unauthenticated",
+        "OTP verification is required before resetting the password.",
+      );
+    }
+
+    const phoneFromToken = (auth.token && auth.token.phone_number) || "";
+    if (!phoneFromToken) {
+      throw new HttpsError(
+        "failed-precondition",
+        "The verified session is missing a phone number.",
+      );
+    }
+
+    const newPassword = (request.data && request.data.newPassword) || "";
+    if (typeof newPassword !== "string" || newPassword.length < 6) {
+      throw new HttpsError(
+        "invalid-argument",
+        "Password must be at least 6 characters long.",
+      );
+    }
+
+    const target = await findUserByPhone(phoneFromToken);
+    if (!target) {
+      throw new HttpsError(
+        "not-found",
+        "No account is registered with this phone number.",
+      );
+    }
+
+    if (target.uid === auth.uid) {
+      throw new HttpsError(
+        "failed-precondition",
+        "Verified session does not belong to a registered account.",
+      );
+    }
+
+    try {
+      await admin.auth().updateUser(target.uid, { password: newPassword });
+    } catch (err) {
+      logger.error("resetPasswordWithVerifiedPhone updateUser failed", err);
+      throw new HttpsError(
+        "internal",
+        "Could not update the password. Please try again.",
+      );
+    }
+
+    try {
+      await admin.auth().deleteUser(auth.uid);
+    } catch (err) {
+      logger.warn(
+        "resetPasswordWithVerifiedPhone deleteUser temp session failed",
+        err,
+      );
+    }
+
+    return { ok: true, role: target.role };
+  },
+);

@@ -422,19 +422,145 @@ abstract class AppLocalizations {
   /// No description provided for @forgotPasswordSubtitle.
   ///
   /// In en, this message translates to:
-  /// **'Enter your email and we will send you a link to reset your password.'**
+  /// **'Enter the phone number registered to your account and we will send you a verification code by SMS.'**
   String get forgotPasswordSubtitle;
 
   /// No description provided for @forgotPasswordSendButton.
   ///
   /// In en, this message translates to:
-  /// **'Send'**
+  /// **'Send code'**
   String get forgotPasswordSendButton;
+
+  /// No description provided for @forgotPasswordPhoneLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Phone number'**
+  String get forgotPasswordPhoneLabel;
+
+  /// No description provided for @forgotPasswordPhoneRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Please enter the phone number registered to your account.'**
+  String get forgotPasswordPhoneRequired;
+
+  /// No description provided for @forgotPasswordSmsSent.
+  ///
+  /// In en, this message translates to:
+  /// **'Verification code sent.'**
+  String get forgotPasswordSmsSent;
+
+  /// No description provided for @forgotPasswordSmsFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not send the verification code. Please try again.'**
+  String get forgotPasswordSmsFailed;
+
+  /// No description provided for @otpScreenTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Verify your phone'**
+  String get otpScreenTitle;
+
+  /// No description provided for @otpInstructions.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter the 6-digit code we just sent to {phone}.'**
+  String otpInstructions(String phone);
+
+  /// No description provided for @otpVerifyButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Verify code'**
+  String get otpVerifyButton;
+
+  /// No description provided for @otpResendPrompt.
+  ///
+  /// In en, this message translates to:
+  /// **'Didn’t get the code?'**
+  String get otpResendPrompt;
+
+  /// No description provided for @otpResendAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Resend'**
+  String get otpResendAction;
+
+  /// No description provided for @otpResendCooldown.
+  ///
+  /// In en, this message translates to:
+  /// **'Resend in {seconds}s'**
+  String otpResendCooldown(int seconds);
+
+  /// No description provided for @otpInvalidCode.
+  ///
+  /// In en, this message translates to:
+  /// **'Invalid or expired verification code.'**
+  String get otpInvalidCode;
+
+  /// No description provided for @otpVerifying.
+  ///
+  /// In en, this message translates to:
+  /// **'Verifying…'**
+  String get otpVerifying;
+
+  /// No description provided for @resetPasswordTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Set a new password'**
+  String get resetPasswordTitle;
+
+  /// No description provided for @resetPasswordSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose a new password for your account.'**
+  String get resetPasswordSubtitle;
+
+  /// No description provided for @resetPasswordNewLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'New password'**
+  String get resetPasswordNewLabel;
+
+  /// No description provided for @resetPasswordConfirmLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Confirm new password'**
+  String get resetPasswordConfirmLabel;
+
+  /// No description provided for @resetPasswordSubmitButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Update password'**
+  String get resetPasswordSubmitButton;
+
+  /// No description provided for @resetPasswordSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Password updated. Please sign in with the new password.'**
+  String get resetPasswordSuccess;
+
+  /// No description provided for @resetPasswordMismatch.
+  ///
+  /// In en, this message translates to:
+  /// **'Passwords do not match.'**
+  String get resetPasswordMismatch;
+
+  /// No description provided for @resetPasswordPhoneNotFound.
+  ///
+  /// In en, this message translates to:
+  /// **'No account is registered with this phone number.'**
+  String get resetPasswordPhoneNotFound;
+
+  /// No description provided for @resetPasswordGenericError.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not update the password. Please try again.'**
+  String get resetPasswordGenericError;
 
   /// No description provided for @passwordResetEmailSent.
   ///
   /// In en, this message translates to:
-  /// **'If an account exists for that email, you will receive reset instructions shortly.'**
+  /// **'Password reset link sent. Please check your email inbox.'**
   String get passwordResetEmailSent;
 
   /// No description provided for @loginWelcomeBack.

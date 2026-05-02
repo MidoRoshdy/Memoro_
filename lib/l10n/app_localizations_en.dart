@@ -33,8 +33,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get comingSoonLabel => 'Coming soon';
 
   @override
-  String get chooseFlowCaregiverComingSoon =>
-      'Link to a patient, review care plans, and stay aligned on medications and activities.';
+  String get chooseFlowCaregiverComingSoon => 'Link to a patient, review care plans, and stay aligned on medications and activities.';
 
   @override
   String get loginTitle => 'Login';
@@ -46,8 +45,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get registerWelcomeTitle => 'Create your account';
 
   @override
-  String get registerWelcomeSubtitle =>
-      'Sign up in seconds and let us help you remember what matters most.';
+  String get registerWelcomeSubtitle => 'Sign up in seconds and let us help you remember what matters most.';
 
   @override
   String get genderLabel => 'Gender';
@@ -68,8 +66,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get phoneRequired => 'Please enter your phone number.';
 
   @override
-  String get invalidPhoneNumber =>
-      'Enter a valid phone number for the selected country.';
+  String get invalidPhoneNumber => 'Enter a valid phone number for the selected country.';
 
   @override
   String get ageHint => 'Age';
@@ -93,15 +90,13 @@ class AppLocalizationsEn extends AppLocalizations {
   String get termsTitle => 'Terms & Conditions';
 
   @override
-  String get termsBody =>
-      'This is a summary placeholder. Replace with your real terms, privacy policy, and consent text before production.';
+  String get termsBody => 'This is a summary placeholder. Replace with your real terms, privacy policy, and consent text before production.';
 
   @override
   String get dialogClose => 'Close';
 
   @override
-  String get imagePickerError =>
-      'Could not open photos. Fully stop the app, run \"flutter clean\", then in the ios folder run \"pod install\", and build again (not hot reload).';
+  String get imagePickerError => 'Could not open photos. Fully stop the app, run \"flutter clean\", then in the ios folder run \"pod install\", and build again (not hot reload).';
 
   @override
   String get registerHaveAccountPrefix => 'Already have an account? ';
@@ -176,15 +171,80 @@ class AppLocalizationsEn extends AppLocalizations {
   String get forgotPasswordTitle => 'Forgot password';
 
   @override
-  String get forgotPasswordSubtitle =>
-      'Enter your email and we will send you a link to reset your password.';
+  String get forgotPasswordSubtitle => 'Enter the phone number registered to your account and we will send you a verification code by SMS.';
 
   @override
-  String get forgotPasswordSendButton => 'Send';
+  String get forgotPasswordSendButton => 'Send code';
 
   @override
-  String get passwordResetEmailSent =>
-      'Password reset link sent. Please check your email inbox.';
+  String get forgotPasswordPhoneLabel => 'Phone number';
+
+  @override
+  String get forgotPasswordPhoneRequired => 'Please enter the phone number registered to your account.';
+
+  @override
+  String get forgotPasswordSmsSent => 'Verification code sent.';
+
+  @override
+  String get forgotPasswordSmsFailed => 'Could not send the verification code. Please try again.';
+
+  @override
+  String get otpScreenTitle => 'Verify your phone';
+
+  @override
+  String otpInstructions(String phone) {
+    return 'Enter the 6-digit code we just sent to $phone.';
+  }
+
+  @override
+  String get otpVerifyButton => 'Verify code';
+
+  @override
+  String get otpResendPrompt => 'Didn’t get the code?';
+
+  @override
+  String get otpResendAction => 'Resend';
+
+  @override
+  String otpResendCooldown(int seconds) {
+    return 'Resend in ${seconds}s';
+  }
+
+  @override
+  String get otpInvalidCode => 'Invalid or expired verification code.';
+
+  @override
+  String get otpVerifying => 'Verifying…';
+
+  @override
+  String get resetPasswordTitle => 'Set a new password';
+
+  @override
+  String get resetPasswordSubtitle => 'Choose a new password for your account.';
+
+  @override
+  String get resetPasswordNewLabel => 'New password';
+
+  @override
+  String get resetPasswordConfirmLabel => 'Confirm new password';
+
+  @override
+  String get resetPasswordSubmitButton => 'Update password';
+
+  @override
+  String get resetPasswordSuccess => 'Password updated. Please sign in with the new password.';
+
+  @override
+  String get resetPasswordMismatch => 'Passwords do not match.';
+
+  @override
+  String get resetPasswordPhoneNotFound => 'No account is registered with this phone number.';
+
+  @override
+  String get resetPasswordGenericError => 'Could not update the password. Please try again.';
+
+  @override
+  String get passwordResetEmailSent => 'Password reset link sent. Please check your email inbox.';
 
   @override
   String get loginWelcomeBack => 'Welcome back';
@@ -208,54 +268,43 @@ class AppLocalizationsEn extends AppLocalizations {
   String get usingTestAccount => 'You are signed in with test account.';
 
   @override
-  String get authErrorMessage =>
-      'Authentication failed. Check your data and try again.';
+  String get authErrorMessage => 'Authentication failed. Check your data and try again.';
 
   @override
   String get authInvalidCredentials => 'Invalid email or password.';
 
   @override
-  String get authPatientLoginOnlyMessage =>
-      'This account belongs to caregiver flow. Please use caregiver login.';
+  String get authPatientLoginOnlyMessage => 'This account belongs to caregiver flow. Please use caregiver login.';
 
   @override
-  String get authCaregiverLoginOnlyMessage =>
-      'This account belongs to patient flow. Please use patient login.';
+  String get authCaregiverLoginOnlyMessage => 'This account belongs to patient flow. Please use patient login.';
 
   @override
-  String get firebaseNotConfigured =>
-      'Firebase is not set up on this device. Run the app with a valid firebase_options configuration.';
+  String get firebaseNotConfigured => 'Firebase is not set up on this device. Run the app with a valid firebase_options configuration.';
 
   @override
-  String get firestorePermissionDenied =>
-      'Could not save your profile (database permission denied). Ask the developer to update Firestore security rules for the patients or users collection.';
+  String get firestorePermissionDenied => 'Could not save your profile (database permission denied). Ask the developer to update Firestore security rules for the patients or users collection.';
 
   @override
   String get passwordTooShort => 'Password must be at least 6 characters.';
 
   @override
-  String get registerErrorWeakPassword =>
-      'Password is too weak. Use at least 6 characters.';
+  String get registerErrorWeakPassword => 'Password is too weak. Use at least 6 characters.';
 
   @override
-  String get registerErrorEmailInUse =>
-      'This email is already registered. Try signing in instead.';
+  String get registerErrorEmailInUse => 'This email is already registered. Try signing in instead.';
 
   @override
-  String get registerErrorInvalidEmail =>
-      'That email address does not look valid.';
+  String get registerErrorInvalidEmail => 'That email address does not look valid.';
 
   @override
-  String get registerErrorOperationNotAllowed =>
-      'Email/password sign-up is disabled in the Firebase project.';
+  String get registerErrorOperationNotAllowed => 'Email/password sign-up is disabled in the Firebase project.';
 
   @override
-  String get registerErrorNetwork =>
-      'Network error. Check your connection and try again.';
+  String get registerErrorNetwork => 'Network error. Check your connection and try again.';
 
   @override
-  String get registerSuccess =>
-      'Account created. Sign in with your email and password.';
+  String get registerSuccess => 'Account created. Sign in with your email and password.';
 
   @override
   String get loading => 'Loading...';
@@ -309,15 +358,13 @@ class AppLocalizationsEn extends AppLocalizations {
   String get chatAssistantCardTitle => 'Assistant Chat-bot';
 
   @override
-  String get chatAssistantCardSubtitle =>
-      'Get instant answers and helpful information anytime with our friendly AI assistant';
+  String get chatAssistantCardSubtitle => 'Get instant answers and helpful information anytime with our friendly AI assistant';
 
   @override
   String get chatCaregiverCardTitle => 'Caregiver';
 
   @override
-  String get chatCaregiverCardSubtitle =>
-      'Connect directly with your dedicated caregiver for personalized support and assistance';
+  String get chatCaregiverCardSubtitle => 'Connect directly with your dedicated caregiver for personalized support and assistance';
 
   @override
   String get chatAssistantTime => '2:15\nPM';
@@ -335,12 +382,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get arabicLabel => 'Arabic';
 
   @override
-  String get chatMedicalDisclaimer =>
-      'These answers are for awareness only and not a replacement for medical advice.';
+  String get chatMedicalDisclaimer => 'These answers are for awareness only and not a replacement for medical advice.';
 
   @override
-  String get chatChooseQuestion =>
-      'Choose any Alzheimer\'s question and I will answer:';
+  String get chatChooseQuestion => 'Choose any Alzheimer\'s question and I will answer:';
 
   @override
   String get gamesNewChallengeLabel => 'New Challenge';
@@ -349,8 +394,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get gamesFeaturedHeroTitle => 'Test your memory';
 
   @override
-  String get gamesFeaturedHeroSubtitle =>
-      'A 5-minute daily exercise to track your cognitive health';
+  String get gamesFeaturedHeroSubtitle => 'A 5-minute daily exercise to track your cognitive health';
 
   @override
   String get gamesHubStartNow => 'Start Now';
@@ -605,8 +649,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get settingsNeedHelpTitle => 'Need Help?';
 
   @override
-  String get settingsNeedHelpSubtitle =>
-      'Contact support if you need assistance';
+  String get settingsNeedHelpSubtitle => 'Contact support if you need assistance';
 
   @override
   String get settingsContactSupport => 'Contact Support';
@@ -702,8 +745,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get motivationGreatTitle => 'You\'re doing great!';
 
   @override
-  String get motivationGreatBody =>
-      'You\'ve completed 4 of your 5 daily\nroutines so keep it up!';
+  String get motivationGreatBody => 'You\'ve completed 4 of your 5 daily\nroutines so keep it up!';
 
   @override
   String get familyScreenTitle => 'My Family';
@@ -761,8 +803,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get sosNeedHelpTitle => 'Do you need help?';
 
   @override
-  String get sosConfirmAssistanceBody =>
-      'We will send emergency\nassistance to your location\nimmediately.';
+  String get sosConfirmAssistanceBody => 'We will send emergency\nassistance to your location\nimmediately.';
 
   @override
   String get sosYesSendHelp => 'Yes, send Help';
@@ -771,8 +812,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get sosSendingCardTitle => 'Sending SOS...';
 
   @override
-  String get sosConnectingContactsLine =>
-      'Connecting to Sarah Miller and Dr. Aris';
+  String get sosConnectingContactsLine => 'Connecting to Sarah Miller and Dr. Aris';
 
   @override
   String get sosViewEmergencyContacts => 'View Emergency Contacts';
@@ -787,8 +827,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get sosContactingFamily => 'Contacting your family...';
 
   @override
-  String get sosSendingGuidanceBody =>
-      'We are alerting your emergency\ncontacts and providing your\ncurrent location. Please stay\nwhere you are.';
+  String get sosSendingGuidanceBody => 'We are alerting your emergency\ncontacts and providing your\ncurrent location. Please stay\nwhere you are.';
 
   @override
   String get sosLabelCurrentLocation => 'CURRENT LOCATION';
@@ -815,15 +854,13 @@ class AppLocalizationsEn extends AppLocalizations {
   String get sosSentSuccessTitle => 'Your SOS was sent\nsuccessfully!';
 
   @override
-  String get sosSentSuccessBody =>
-      'Your family and caregivers have\nbeen notified. Stay calm, help is\non the way.';
+  String get sosSentSuccessBody => 'Your family and caregivers have\nbeen notified. Stay calm, help is\non the way.';
 
   @override
   String get sosLocationSharedTitle => 'Location Shared';
 
   @override
-  String get sosLocationSharedBody =>
-      'Caregivers can see your\ncurrent position.';
+  String get sosLocationSharedBody => 'Caregivers can see your\ncurrent position.';
 
   @override
   String get sosBackToHome => 'Back to Home';
@@ -880,8 +917,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get sosTestSystemTitle => 'Test SOS System';
 
   @override
-  String get sosTestSystemSubtitle =>
-      'Check if your SOS system is working\nproperly';
+  String get sosTestSystemSubtitle => 'Check if your SOS system is working\nproperly';
 
   @override
   String get sosTestButton => 'Test SOS';
@@ -890,23 +926,19 @@ class AppLocalizationsEn extends AppLocalizations {
   String get sosHowItWorksTitle => 'How SOS Works';
 
   @override
-  String get sosHowItWorksBullet1 =>
-      '• Press and hold the SOS button for 3 seconds';
+  String get sosHowItWorksBullet1 => '• Press and hold the SOS button for 3 seconds';
 
   @override
-  String get sosHowItWorksBullet2 =>
-      '• Your location will be shared if enabled';
+  String get sosHowItWorksBullet2 => '• Your location will be shared if enabled';
 
   @override
-  String get sosHowItWorksBullet3 =>
-      '• Emergency contact will be called automatically';
+  String get sosHowItWorksBullet3 => '• Emergency contact will be called automatically';
 
   @override
   String get doctorConnectTitle => 'Connect with Patient';
 
   @override
-  String get doctorConnectSubtitle =>
-      'Enter the patient\'s code to request access';
+  String get doctorConnectSubtitle => 'Enter the patient\'s code to request access';
 
   @override
   String get doctorPatientIdLabel => 'Patient ID';
@@ -918,12 +950,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get doctorSubmitCodeButton => 'Submit Code';
 
   @override
-  String get doctorConnectInfoBody =>
-      'Request the code from the patient. You will proceed to the next page after entering it.';
+  String get doctorConnectInfoBody => 'Request the code from the patient. You will proceed to the next page after entering it.';
 
   @override
-  String get doctorPrivacyNoticeBody =>
-      'To protect patient privacy, you must be verified by the patient or their primary guardian before accessing health records.';
+  String get doctorPrivacyNoticeBody => 'To protect patient privacy, you must be verified by the patient or their primary guardian before accessing health records.';
 
   @override
   String doctorPatientIdDisplay(Object id) {
@@ -937,8 +967,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get doctorStatusWaitingTitle => 'Status Waiting';
 
   @override
-  String get doctorStatusWaitingSubtitle =>
-      'System is synchronizing encrypted records for new users.';
+  String get doctorStatusWaitingSubtitle => 'System is synchronizing encrypted records for new users.';
 
   @override
   String get doctorCheckAccessButton => 'Check access';
@@ -947,8 +976,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get doctorEmergencyRequestTitle => 'Emergency Request';
 
   @override
-  String get doctorEmergencyRequestSubtitle =>
-      'Margaret Thompson\n2 minutes ago';
+  String get doctorEmergencyRequestSubtitle => 'Margaret Thompson\n2 minutes ago';
 
   @override
   String get doctorCallButton => 'Call';
@@ -969,8 +997,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get doctorWellnessScoreLine => 'This week\'s overall wellness score.';
 
   @override
-  String get doctorProgressNoItemsYet =>
-      'No medicines or activities assigned yet.';
+  String get doctorProgressNoItemsYet => 'No medicines or activities assigned yet.';
 
   @override
   String doctorProgressSummary(Object done, Object total) {
@@ -1058,8 +1085,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get doctorActivityTitleLabel => 'Activity title';
 
   @override
-  String get doctorActivityTitleHint =>
-      'Drink water / Morning walk / Stretching';
+  String get doctorActivityTitleHint => 'Drink water / Morning walk / Stretching';
 
   @override
   String get doctorActivityTypeLabel => 'Activity type';
@@ -1091,8 +1117,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get doctorActivityInstructionsLabel => 'Instructions';
 
   @override
-  String get doctorActivityInstructionsHint =>
-      'Any extra details for the patient...';
+  String get doctorActivityInstructionsHint => 'Any extra details for the patient...';
 
   @override
   String get doctorActivityDoneButton => 'Done';
@@ -1133,15 +1158,13 @@ class AppLocalizationsEn extends AppLocalizations {
   String get doctorActivityWeeklyProgress => 'Weekly Progress';
 
   @override
-  String get doctorActivityWeeklySubtitle =>
-      'Activities completed this week. You\'re on track for the target.';
+  String get doctorActivityWeeklySubtitle => 'Activities completed this week. You\'re on track for the target.';
 
   @override
   String get doctorActivityRecentResultTitle => 'Recent Result';
 
   @override
-  String get doctorActivityRecentResultSubtitle =>
-      'High accuracy achieved today';
+  String get doctorActivityRecentResultSubtitle => 'High accuracy achieved today';
 
   @override
   String get doctorActivityAssignDetails => 'Assign Details';
@@ -1263,20 +1286,16 @@ class AppLocalizationsEn extends AppLocalizations {
   String get doctorPatientIdRequired => 'Please enter the patient\'s ID.';
 
   @override
-  String get doctorPatientNotFound =>
-      'No patient found with that ID. Check the code and try again.';
+  String get doctorPatientNotFound => 'No patient found with that ID. Check the code and try again.';
 
   @override
-  String get doctorPatientLookupError =>
-      'Could not look up the patient. Check your connection and try again.';
+  String get doctorPatientLookupError => 'Could not look up the patient. Check your connection and try again.';
 
   @override
-  String get doctorLinkRequestFailed =>
-      'Could not send your request. Check your connection or try again later.';
+  String get doctorLinkRequestFailed => 'Could not send your request. Check your connection or try again later.';
 
   @override
-  String get doctorPendingWaitForPatient =>
-      'This screen will update automatically when the patient accepts your request.';
+  String get doctorPendingWaitForPatient => 'This screen will update automatically when the patient accepts your request.';
 
   @override
   String get doctorProfileQuickInfoTitle => 'Quick Info';
@@ -1305,8 +1324,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get doctorProfileEditProfileTooltip => 'Edit profile';
 
   @override
-  String get doctorMedConnectFirst =>
-      'Connect a patient first to manage medication.';
+  String get doctorMedConnectFirst => 'Connect a patient first to manage medication.';
 
   @override
   String get doctorMedTitleMedication => 'Medication';
@@ -1408,8 +1426,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get doctorMedCouldNotSave => 'Could not save medication right now.';
 
   @override
-  String get doctorMedCouldNotSaveChanges =>
-      'Could not save changes right now.';
+  String get doctorMedCouldNotSaveChanges => 'Could not save changes right now.';
 
   @override
   String get doctorMedMedicationNameRequired => 'Medication name is required.';
@@ -1475,8 +1492,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get doctorMedCaregiverInstructions => 'Caregiver Instructions';
 
   @override
-  String get doctorMedInstructionHint =>
-      'e.g. Administer with a light meal.\nPatient may be resistant if room is too bright.';
+  String get doctorMedInstructionHint => 'e.g. Administer with a light meal.\nPatient may be resistant if room is too bright.';
 
   @override
   String get doctorMedStepOneOfTwo => 'Step 1 of 2';

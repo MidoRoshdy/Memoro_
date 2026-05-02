@@ -171,10 +171,77 @@ class AppLocalizationsAr extends AppLocalizations {
   String get forgotPasswordTitle => 'نسيت كلمة المرور';
 
   @override
-  String get forgotPasswordSubtitle => 'أدخل بريدك الإلكتروني وسنرسل لك رابطًا لإعادة تعيين كلمة المرور.';
+  String get forgotPasswordSubtitle => 'أدخل رقم هاتفك المسجّل في الحساب وسنرسل لك رمز التحقق عبر رسالة نصية.';
 
   @override
-  String get forgotPasswordSendButton => 'إرسال';
+  String get forgotPasswordSendButton => 'إرسال الرمز';
+
+  @override
+  String get forgotPasswordPhoneLabel => 'رقم الهاتف';
+
+  @override
+  String get forgotPasswordPhoneRequired => 'من فضلك أدخل رقم الهاتف المسجّل في الحساب.';
+
+  @override
+  String get forgotPasswordSmsSent => 'تم إرسال رمز التحقق.';
+
+  @override
+  String get forgotPasswordSmsFailed => 'تعذّر إرسال رمز التحقق. حاول مرة أخرى.';
+
+  @override
+  String get otpScreenTitle => 'تحقّق من رقم هاتفك';
+
+  @override
+  String otpInstructions(String phone) {
+    return 'أدخل الرمز المكوّن من 6 أرقام الذي أرسلناه إلى $phone.';
+  }
+
+  @override
+  String get otpVerifyButton => 'تحقّق من الرمز';
+
+  @override
+  String get otpResendPrompt => 'لم يصلك الرمز؟';
+
+  @override
+  String get otpResendAction => 'إعادة الإرسال';
+
+  @override
+  String otpResendCooldown(int seconds) {
+    return 'إعادة الإرسال خلال $seconds ثانية';
+  }
+
+  @override
+  String get otpInvalidCode => 'رمز التحقق غير صحيح أو منتهي الصلاحية.';
+
+  @override
+  String get otpVerifying => 'جاري التحقق…';
+
+  @override
+  String get resetPasswordTitle => 'تعيين كلمة مرور جديدة';
+
+  @override
+  String get resetPasswordSubtitle => 'اختر كلمة مرور جديدة لحسابك.';
+
+  @override
+  String get resetPasswordNewLabel => 'كلمة المرور الجديدة';
+
+  @override
+  String get resetPasswordConfirmLabel => 'تأكيد كلمة المرور الجديدة';
+
+  @override
+  String get resetPasswordSubmitButton => 'تحديث كلمة المرور';
+
+  @override
+  String get resetPasswordSuccess => 'تم تحديث كلمة المرور. سجّل الدخول بكلمة المرور الجديدة.';
+
+  @override
+  String get resetPasswordMismatch => 'كلمتا المرور غير متطابقتين.';
+
+  @override
+  String get resetPasswordPhoneNotFound => 'لا يوجد حساب مسجّل بهذا الرقم.';
+
+  @override
+  String get resetPasswordGenericError => 'تعذّر تحديث كلمة المرور. حاول مرة أخرى.';
 
   @override
   String get passwordResetEmailSent => 'تم إرسال رابط إعادة تعيين كلمة المرور. من فضلك تحقق من بريدك الإلكتروني.';

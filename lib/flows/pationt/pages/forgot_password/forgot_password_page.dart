@@ -1,13 +1,16 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:intl_phone_field/intl_phone_field.dart';
+import 'package:intl_phone_field/phone_number.dart';
 
 import '../../../../core/constants/dimensions.dart';
 import '../../../../core/constants/string_assets.dart';
-import '../../../../core/services/auth_service.dart';
+import '../../../../core/services/password_reset_service.dart';
 import '../../../../core/theme/app_color_palette.dart';
 import '../../../shared/auth/auth_flow_role.dart';
+import '../../../shared/auth/otp_verification_page.dart';
 import '../../../../l10n/app_localizations.dart';
-import '../../widgets/app_text_field.dart';
 import '../../widgets/language_switch_icon.dart';
 import '../../widgets/primary_button.dart';
 
@@ -21,6 +24,13 @@ class ForgotPasswordPage extends StatefulWidget {
 }
 
 class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
+  static const double _fieldRadius = 12;
+
+  final _phoneController = TextEditingController();
+  String _phoneCompleteNumber = '';
+  bool _phoneIsValid = false;
+  bool _loading = false;
+
   Color get _roleColor => widget.role == AuthFlowRole.patient
       ? AppColorPalette.blueSteel
       : AppColorPalette.emerald;
@@ -31,42 +41,70 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
         : l10n.chooseFlowCaregiver;
   }
 
-  final _emailController = TextEditingController();
-  bool _loading = false;
-
-  void _onEmailChanged() {
-    if (mounted) setState(() {});
-  }
-
-  bool get _emailFilled => _emailController.text.trim().isNotEmpty;
-
-  @override
-  void initState() {
-    super.initState();
-    _emailController.addListener(_onEmailChanged);
-  }
-
   @override
   void dispose() {
-    _emailController.removeListener(_onEmailChanged);
-    _emailController.dispose();
+    _phoneController.dispose();
     super.dispose();
+  }
+
+  InputDecoration _phoneDecoration(ThemeData theme, AppLocalizations l10n) {
+    OutlineInputBorder border(Color color) => OutlineInputBorder(
+      borderRadius: BorderRadius.circular(_fieldRadius),
+      borderSide: BorderSide(color: color, width: 1.2),
+    );
+    return InputDecoration(
+      hintText: l10n.fieldHintPhone,
+      hintStyle: theme.textTheme.bodyLarge?.copyWith(
+        color: Colors.grey.shade600,
+      ),
+      filled: true,
+      fillColor: AppColorPalette.white,
+      border: border(Colors.grey.shade400),
+      enabledBorder: border(Colors.grey.shade400),
+      focusedBorder: border(_roleColor),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
+      counterText: '',
+    );
   }
 
   Future<void> _onSend() async {
     final l10n = AppLocalizations.of(context)!;
+    final phone = _phoneCompleteNumber.trim();
+    if (phone.isEmpty || !_phoneIsValid) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(l10n.forgotPasswordPhoneRequired)));
+      return;
+    }
+
     setState(() => _loading = true);
     try {
-      await AuthService.sendPasswordResetEmail(
-        email: _emailController.text.trim(),
+      await PasswordResetService.clearTempSession();
+      final verification = await PasswordResetService.sendOtp(
+        phoneNumber: phone,
       );
       if (!mounted) return;
-      Navigator.of(context).pop(true);
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(l10n.forgotPasswordSmsSent)));
+      await Navigator.of(context).push(
+        MaterialPageRoute<void>(
+          builder: (_) => OtpVerificationPage(
+            role: widget.role,
+            verification: verification,
+          ),
+        ),
+      );
+    } on FirebaseAuthException catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(e.message ?? l10n.forgotPasswordSmsFailed)),
+      );
     } catch (_) {
       if (!mounted) return;
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(SnackBar(content: Text(l10n.authErrorMessage)));
+      ).showSnackBar(SnackBar(content: Text(l10n.forgotPasswordSmsFailed)));
     } finally {
       if (mounted) setState(() => _loading = false);
     }
@@ -139,7 +177,8 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
                             Center(
                               child: Container(
                                 padding: const EdgeInsets.symmetric(
-                                  horizontal: Dimensions.horizontalSpacingMedium,
+                                  horizontal:
+                                      Dimensions.horizontalSpacingMedium,
                                   vertical: Dimensions.verticalSpacingShort,
                                 ),
                                 decoration: BoxDecoration(
@@ -185,18 +224,40 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
                             const SizedBox(
                               height: Dimensions.horizontalSpacingLarge,
                             ),
-                            AppTextField(
-                              controller: _emailController,
-                              label: l10n.emailHint,
-                              hintText: l10n.fieldHintEmail,
-                              labelAbove: true,
-                              labelAboveStyle: labelAboveStyle,
-                              fillColor: AppColorPalette.white,
-                              keyboardType: TextInputType.emailAddress,
+                            Text(
+                              l10n.forgotPasswordPhoneLabel,
+                              style: labelAboveStyle,
+                            ),
+                            shortVerticalSpace,
+                            IntlPhoneField(
+                              controller: _phoneController,
+                              enabled: !_loading,
+                              initialCountryCode: 'EG',
+                              languageCode: Localizations.localeOf(
+                                context,
+                              ).languageCode,
                               textInputAction: TextInputAction.done,
-                              autofillHints: const [AutofillHints.email],
-                              onSubmitted: (_) {
-                                if (!_loading && _emailFilled) _onSend();
+                              autovalidateMode:
+                                  AutovalidateMode.onUserInteraction,
+                              invalidNumberMessage: l10n.invalidPhoneNumber,
+                              disableLengthCheck: false,
+                              decoration: _phoneDecoration(theme, l10n),
+                              style: theme.textTheme.bodyLarge?.copyWith(
+                                color: AppColorPalette.black,
+                              ),
+                              dropdownTextStyle: theme.textTheme.bodyLarge
+                                  ?.copyWith(color: AppColorPalette.black),
+                              flagsButtonPadding:
+                                  const EdgeInsetsDirectional.only(start: 8),
+                              onChanged: (PhoneNumber phone) {
+                                setState(() {
+                                  _phoneCompleteNumber = phone.completeNumber;
+                                });
+                              },
+                              validator: (phone) {
+                                _phoneIsValid =
+                                    phone != null && phone.number.isNotEmpty;
+                                return null;
                               },
                             ),
                             longVerticalSpace,
@@ -204,9 +265,7 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
                               label: _loading
                                   ? l10n.loading
                                   : l10n.forgotPasswordSendButton,
-                              onPressed: _loading || !_emailFilled
-                                  ? null
-                                  : _onSend,
+                              onPressed: _loading ? null : _onSend,
                             ),
                             veryLongVerticalSpace,
                           ],
