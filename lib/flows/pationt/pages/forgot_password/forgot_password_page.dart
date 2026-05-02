@@ -1,4 +1,5 @@
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:intl_phone_field/intl_phone_field.dart';
@@ -70,7 +71,15 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
   Future<void> _onSend() async {
     final l10n = AppLocalizations.of(context)!;
     final phone = _phoneCompleteNumber.trim();
+    debugPrint(
+      '[ForgotPassword] Send tapped: phone="$phone", '
+      'role=${widget.role}, valid=$_phoneIsValid',
+    );
+
     if (phone.isEmpty || !_phoneIsValid) {
+      debugPrint(
+        '[ForgotPassword] Aborting: phone empty or invalid (raw="$phone").',
+      );
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(SnackBar(content: Text(l10n.forgotPasswordPhoneRequired)));
@@ -78,12 +87,28 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
     }
 
     setState(() => _loading = true);
+    final stopwatch = Stopwatch()..start();
     try {
+      debugPrint('[ForgotPassword] Clearing any previous temp auth session…');
       await PasswordResetService.clearTempSession();
+
+      debugPrint('[ForgotPassword] Calling verifyPhoneNumber for $phone…');
       final verification = await PasswordResetService.sendOtp(
         phoneNumber: phone,
       );
-      if (!mounted) return;
+      stopwatch.stop();
+      debugPrint(
+        '[ForgotPassword] OTP code dispatched in '
+        '${stopwatch.elapsedMilliseconds}ms. '
+        'verificationId=${verification.verificationId} '
+        'resendToken=${verification.resendToken} '
+        'phone=${verification.phoneNumber}',
+      );
+
+      if (!mounted) {
+        debugPrint('[ForgotPassword] Widget unmounted before navigation.');
+        return;
+      }
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(SnackBar(content: Text(l10n.forgotPasswordSmsSent)));
@@ -95,18 +120,32 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
           ),
         ),
       );
-    } on FirebaseAuthException catch (e) {
+    } on FirebaseAuthException catch (e, st) {
+      stopwatch.stop();
+      debugPrint(
+        '[ForgotPassword] FirebaseAuthException after '
+        '${stopwatch.elapsedMilliseconds}ms: '
+        'code=${e.code}, message=${e.message}',
+      );
+      debugPrint('[ForgotPassword] Stack: $st');
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(e.message ?? l10n.forgotPasswordSmsFailed)),
       );
-    } catch (_) {
+    } catch (e, st) {
+      stopwatch.stop();
+      debugPrint(
+        '[ForgotPassword] Unexpected error after '
+        '${stopwatch.elapsedMilliseconds}ms: $e',
+      );
+      debugPrint('[ForgotPassword] Stack: $st');
       if (!mounted) return;
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(SnackBar(content: Text(l10n.forgotPasswordSmsFailed)));
     } finally {
       if (mounted) setState(() => _loading = false);
+      debugPrint('[ForgotPassword] _onSend finished.');
     }
   }
 

@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:cloud_functions/cloud_functions.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/foundation.dart';
 
 class PasswordResetVerification {
   PasswordResetVerification({
@@ -36,20 +37,37 @@ abstract final class PasswordResetService {
     void Function(PhoneAuthCredential credential)? autoResolved,
   }) async {
     final completer = Completer<PasswordResetVerification>();
+    debugPrint(
+      '[PasswordResetService] verifyPhoneNumber start phone=$phoneNumber '
+      'resendToken=$resendToken timeout=${timeout.inSeconds}s',
+    );
 
     await _auth.verifyPhoneNumber(
       phoneNumber: phoneNumber,
       timeout: timeout,
       forceResendingToken: resendToken,
       verificationCompleted: (credential) {
+        debugPrint(
+          '[PasswordResetService] verificationCompleted (auto-resolved): '
+          'providerId=${credential.providerId} smsCode=${credential.smsCode} '
+          'verificationId=${credential.verificationId}',
+        );
         autoResolved?.call(credential);
       },
       verificationFailed: (e) {
+        debugPrint(
+          '[PasswordResetService] verificationFailed: '
+          'code=${e.code} message=${e.message}',
+        );
         if (!completer.isCompleted) {
           completer.completeError(e);
         }
       },
       codeSent: (verificationId, forceResendingToken) {
+        debugPrint(
+          '[PasswordResetService] codeSent: '
+          'verificationId=$verificationId resendToken=$forceResendingToken',
+        );
         if (!completer.isCompleted) {
           completer.complete(
             PasswordResetVerification(
@@ -60,7 +78,12 @@ abstract final class PasswordResetService {
           );
         }
       },
-      codeAutoRetrievalTimeout: (_) {},
+      codeAutoRetrievalTimeout: (verificationId) {
+        debugPrint(
+          '[PasswordResetService] codeAutoRetrievalTimeout: '
+          'verificationId=$verificationId',
+        );
+      },
     );
 
     return completer.future;
